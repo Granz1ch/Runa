@@ -1246,6 +1246,11 @@ function setComposerEnabled(enabled, type) {
   const composer = $('composer-textarea');
   const send = $('btn-send');
   const attach = $('btn-attach');
+  if (type === 'channel' && !enabled) {
+    if (bar) bar.style.display = 'none';
+  } else {
+    if (bar) bar.style.display = '';
+  }
   if (bar) bar.classList.toggle('disabled', !enabled);
   if (composer) {
     composer.disabled = !enabled;
