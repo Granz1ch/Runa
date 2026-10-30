@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CookieChat — Admin</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+<style>
+:root{--bg:#0e0e0e;--bg2:#161616;--bg3:#1e1e1e;--surf:#232323;--surf2:#2d2d2d;--border:rgba(255,255,255,.07);--accent:#7c5cfc;--accent2:#a084ff;--grad:linear-gradient(135deg,#7c5cfc,#b060f8);--text:#efefef;--text2:#999;--text3:#555;--green:#3fd968;--red:#ff4f4f;--blue:#4da6ff}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+::-webkit-scrollbar{width:3px}::-webkit-scrollbar-thumb{background:#333;border-radius:4px}
+button{font-family:inherit}
+.topbar{height:52px;background:rgba(14,14,14,.92);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 20px;gap:12px;position:sticky;top:0;z-index:10}
+.t-logo{font-size:1rem;font-weight:800;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.t-badge{background:var(--accent);color:#fff;font-size:.68rem;font-weight:700;padding:2px 8px;border-radius:20px}
+.t-link{margin-left:auto;color:var(--text2);font-size:.82rem;text-decoration:none;display:flex;align-items:center;gap:5px;padding:6px 12px;border-radius:9px;transition:all .15s}
+.t-link:hover{background:var(--surf);color:var(--text)}
+.container{max-width:1180px;margin:0 auto;padding:28px 20px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px;margin-bottom:28px}
+.stat{background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:16px;padding:18px 20px;transition:background .15s}
+.stat:hover{background:rgba(255,255,255,.06)}
+.stat-num{font-size:2rem;font-weight:800;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.stat-lbl{font-size:.78rem;color:var(--text2);margin-top:3px;display:flex;align-items:center;gap:5px}
+.stat-lbl i{font-size:.85rem}
+.tabs{display:flex;gap:3px;margin-bottom:20px;background:rgba(255,255,255,.04);border-radius:13px;padding:3px;width:fit-content}
+.tab{padding:8px 20px;background:none;border:none;color:var(--text2);cursor:pointer;font-size:.87rem;border-radius:10px;transition:all .15s;display:flex;align-items:center;gap:6px}
+.tab.on{background:rgba(255,255,255,.08);color:var(--text);font-weight:600}
+.panel{display:none}.panel.on{display:block}
+.card{background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:16px;overflow:hidden}
+.card-head{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.card-head h2{font-size:.9rem;font-weight:700;display:flex;align-items:center;gap:7px}
+.card-head h2 i{color:var(--accent2)}
+.btn{padding:7px 15px;border-radius:9px;border:none;cursor:pointer;font-size:.8rem;font-weight:600;transition:all .15s;display:inline-flex;align-items:center;gap:5px}
+.btn-primary{background:var(--grad);color:#fff;box-shadow:0 2px 10px rgba(124,92,252,.3)}
+.btn-primary:hover{opacity:.85}
+.btn-warn{background:rgba(255,79,79,.12);color:var(--red);border:1px solid rgba(255,79,79,.2)}
+.btn-warn:hover{background:rgba(255,79,79,.2)}
+.btn-ok{background:rgba(63,217,104,.1);color:var(--green);border:1px solid rgba(63,217,104,.2)}
+.btn-ok:hover{background:rgba(63,217,104,.18)}
+.btn-del{background:rgba(255,79,79,.07);color:var(--red);border:1px solid rgba(255,79,79,.15)}
+.btn-del:hover{background:rgba(255,79,79,.15)}
+.btn-ghost{background:rgba(255,255,255,.06);color:var(--text);border:1px solid var(--border)}
+.btn-ghost:hover{background:rgba(255,255,255,.1)}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;padding:10px 16px;font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);background:rgba(255,255,255,.02);font-weight:600}
+td{padding:11px 16px;border-top:1px solid var(--border);font-size:.84rem;vertical-align:middle}
+tr:hover td{background:rgba(255,255,255,.02)}
+.badge-r{padding:2px 8px;border-radius:6px;font-size:.7rem;font-weight:700}
+.badge-r.admin{background:rgba(124,92,252,.18);color:var(--accent2)}
+.badge-r.user{background:rgba(255,255,255,.06);color:var(--text2)}
+.badge-banned{background:rgba(255,79,79,.15);color:var(--red);padding:2px 8px;border-radius:6px;font-size:.7rem;font-weight:700}
+.dot-on{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--green);margin-right:5px}
+.dot-off{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--border);margin-right:5px}
+.acts{display:flex;gap:5px;flex-wrap:wrap}
+.empty-row td{text-align:center;color:var(--text2);padding:28px;font-style:italic}
+.form-row{display:flex;gap:9px;align-items:center;padding:16px 18px}
+.fi{padding:9px 13px;border-radius:10px;background:rgba(255,255,255,.05);border:1.5px solid var(--border);color:var(--text);font-size:.87rem;outline:none;transition:border-color .2s}
+.fi:focus{border-color:var(--accent)}
+.fi::placeholder{color:var(--text3)}
+#toast{position:fixed;bottom:20px;right:20px;background:rgba(30,30,30,.96);border:1px solid rgba(255,255,255,.08);color:var(--text);padding:10px 15px;border-radius:11px;font-size:.82rem;z-index:999;opacity:0;transform:translateY(6px);transition:all .22s;pointer-events:none;backdrop-filter:blur(20px)}
+#toast.on{opacity:1;transform:none}
+.av{border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-weight:700;color:#fff;font-size:.75rem;width:32px;height:32px;flex-shrink:0}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="t-logo">CookieChat 🍪</div>
+  <div class="t-badge"><i class="bi bi-tools"></i> Admin</div>
+  <a class="t-link" href="/" target="_self"><i class="bi bi-arrow-left"></i> Назад в чат</a>
+</div>
+
+<div class="container">
+  <div class="stats">
+    <div class="stat"><div class="stat-num" id="s-users">—</div><div class="stat-lbl"><i class="bi bi-people"></i> Пользователи</div></div>
+    <div class="stat"><div class="stat-num" id="s-rooms">—</div><div class="stat-lbl"><i class="bi bi-chat-dots"></i> Комнаты</div></div>
+    <div class="stat"><div class="stat-num" id="s-msgs">—</div><div class="stat-lbl"><i class="bi bi-chat-text"></i> Сообщения</div></div>
+    <div class="stat"><div class="stat-num" id="s-online">—</div><div class="stat-lbl"><i class="bi bi-circle-fill" style="color:var(--green);font-size:.55rem"></i> Онлайн</div></div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab on" onclick="switchTab('users',this)"><i class="bi bi-people"></i> Пользователи</button>
+    <button class="tab" onclick="switchTab('rooms',this)"><i class="bi bi-chat-dots"></i> Комнаты</button>
+  </div>
+
+  <div class="panel on" id="panel-users">
+    <div class="card">
+      <div class="card-head"><h2><i class="bi bi-people"></i> Все пользователи</h2><button class="btn btn-ghost" onclick="loadUsers()"><i class="bi bi-arrow-clockwise"></i> Обновить</button></div>
+      <table><thead><tr><th>Аватар</th><th>Имя</th><th>@Username</th><th>Роль</th><th>Статус</th><th>Зарегистрирован</th><th>Действия</th></tr></thead>
+      <tbody id="u-tbody"><tr class="empty-row"><td colspan="7">Загрузка...</td></tr></tbody></table>
+    </div>
+  </div>
+
+  <div class="panel" id="panel-rooms">
+    <div class="card" style="margin-bottom:16px">
+      <div class="card-head"><h2><i class="bi bi-plus-circle"></i> Создать комнату</h2></div>
+      <div class="form-row">
+        <input class="fi" id="new-room" placeholder="Название комнаты..." style="width:280px" onkeydown="if(event.key==='Enter')createRoom()">
+        <button class="btn btn-primary" onclick="createRoom()"><i class="bi bi-plus"></i> Создать</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-head"><h2><i class="bi bi-chat-dots"></i> Все комнаты</h2><button class="btn btn-ghost" onclick="loadRooms()"><i class="bi bi-arrow-clockwise"></i> Обновить</button></div>
+      <table><thead><tr><th>Название</th><th>Тип</th><th>Создана</th><th>Действия</th></tr></thead>
+      <tbody id="r-tbody"><tr class="empty-row"><td colspan="4">Загрузка...</td></tr></tbody></table>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const token=localStorage.getItem('cc_token');
+if(!token){alert('Войдите сначала.');location.href='/';}
+
+const COLS=['#7c5cfc','#e040fb','#2d8c40','#3a5fa8','#c47a1a','#c02020','#0e8a7a','#d48a0f'];
+function uc(n){return COLS[(n||'').charCodeAt(0)%COLS.length];}
+
+async function api(u,m='GET',b=null){
+  const h={'Content-Type':'application/json','x-token':token};
+  const r=await fetch(u,{method:m,headers:h,body:b?JSON.stringify(b):undefined});
+  const d=await r.json();
+  if(d.error==='Forbidden'||d.error==='Unauthorized'){alert('Нет доступа.');location.href='/';return null;}
+  return d;
+}
+
+function switchTab(name,el){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('on'));
+  el.classList.add('on');
+  document.getElementById('panel-'+name).classList.add('on');
+  if(name==='users')loadUsers();
+  if(name==='rooms')loadRooms();
+}
+
+async function loadStats(){
+  const d=await api('/api/admin/stats');if(!d)return;
+  document.getElementById('s-users').textContent=d.users;
+  document.getElementById('s-rooms').textContent=d.rooms;
+  document.getElementById('s-msgs').textContent=d.messages;
+  document.getElementById('s-online').textContent=d.online;
+}
+
+async function loadUsers(){
+  const users=await api('/api/admin/users');if(!users)return;
+  const tb=document.getElementById('u-tbody');
+  if(!users.length){tb.innerHTML='<tr class="empty-row"><td colspan="7">Нет пользователей</td></tr>';return;}
+  tb.innerHTML=users.map(u=>{
+    const init=(u.displayName||u.username||'?')[0].toUpperCase();
+    const color=uc(u.username);
+    const role=`<span class="badge-r ${u.role}">${u.role}</span>`;
+    const status=u.online?`<span class="dot-on"></span>Онлайн`:`<span class="dot-off"></span>Офлайн`;
+    const bannedBadge=u.banned?` <span class="badge-banned">Забанен</span>`:'';
+    const joined=new Date(u.createdAt).toLocaleDateString('ru');
+    const actions=u.role==='admin'
+      ?'<span style="color:var(--text3);font-size:.75rem">Защищён</span>'
+      :`<div class="acts">
+        ${u.banned
+          ?`<button class="btn btn-ok" onclick="unban('${u.id}')"><i class="bi bi-check-circle"></i> Разбанить</button>`
+          :`<button class="btn btn-warn" onclick="ban('${u.id}','${esc(u.username)}')"><i class="bi bi-slash-circle"></i> Бан</button>`}
+        <button class="btn btn-del" onclick="del('${u.id}','${esc(u.username)}')"><i class="bi bi-trash"></i></button>
+      </div>`;
+    return`<tr>
+      <td><div class="av" style="background:${color}">${init}</div></td>
+      <td><b>${escH(u.displayName||u.username)}</b>${bannedBadge}</td>
+      <td style="color:var(--text2)">@${escH(u.username)}</td>
+      <td>${role}</td>
+      <td>${status}</td>
+      <td style="color:var(--text2)">${joined}</td>
+      <td>${actions}</td>
+    </tr>`;
+  }).join('');
+}
+
+async function ban(id,username){
+  if(!confirm(`Заблокировать @${username}?`))return;
+  const r=await api(`/api/admin/users/${id}/ban`,'POST');
+  if(r?.ok){showToast(`🚫 @${username} заблокирован`);loadUsers();loadStats();}
+  else showToast(r?.error||'Ошибка');
+}
+async function unban(id){
+  const r=await api(`/api/admin/users/${id}/unban`,'POST');
+  if(r?.ok){showToast('✅ Разблокирован');loadUsers();}
+  else showToast(r?.error||'Ошибка');
+}
+async function del(id,username){
+  if(!confirm(`Удалить @${username}? Это необратимо.`))return;
+  const r=await api(`/api/admin/users/${id}`,'DELETE');
+  if(r?.ok){showToast(`🗑 @${username} удалён`);loadUsers();loadStats();}
+  else showToast(r?.error||'Ошибка');
+}
+
+async function loadRooms(){
+  const rooms=await api('/api/rooms');if(!rooms)return;
+  const tb=document.getElementById('r-tbody');
+  const ch=rooms.filter(r=>r.type==='channel');
+  if(!ch.length){tb.innerHTML='<tr class="empty-row"><td colspan="4">Нет комнат</td></tr>';return;}
+  tb.innerHTML=ch.map(r=>`<tr>
+    <td><b><i class="bi bi-chat-dots" style="color:var(--accent2);margin-right:6px"></i>${escH(r.name)}</b></td>
+    <td><span style="background:rgba(63,217,104,.1);color:var(--green);padding:2px 8px;border-radius:6px;font-size:.72rem;font-weight:700">Канал</span></td>
+    <td style="color:var(--text2)">${new Date(r.createdAt).toLocaleDateString('ru')}</td>
+    <td><button class="btn btn-del" onclick="delRoom('${r.id}','${esc(r.name)}')"><i class="bi bi-trash"></i> Удалить</button></td>
+  </tr>`).join('');
+}
+async function createRoom(){
+  const name=document.getElementById('new-room').value.trim();if(!name)return;
+  const r=await api('/api/rooms','POST',{name});
+  if(r?.id){showToast('✅ Комната создана');document.getElementById('new-room').value='';loadRooms();loadStats();}
+  else showToast(r?.error||'Ошибка');
+}
+async function delRoom(id,name){
+  if(!confirm(`Удалить комнату «${name}»?`))return;
+  const r=await api(`/api/rooms/${id}`,'DELETE');
+  if(r?.ok){showToast('🗑 Комната удалена');loadRooms();loadStats();}
+  else showToast(r?.error||'Ошибка');
+}
+
+function escH(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function esc(s){return String(s).replace(/'/g,"\\'")}
+let _tt;
+function showToast(m){const e=document.getElementById('toast');e.textContent=m;e.classList.add('on');clearTimeout(_tt);_tt=setTimeout(()=>e.classList.remove('on'),2800);}
+
+(async()=>{await loadStats();await loadUsers();setInterval(loadStats,10000);})();
+</script>
+</body>
+</html>

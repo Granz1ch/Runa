@@ -1,0 +1,354 @@
+const express = require('express');
+const http = require('http');
+const { Server } = require('socket.io');
+const Database = require('better-sqlite3');
+const path = require('path');
+const fs = require('fs');
+const multer = require('multer');
+const { v4: uuidv4 } = require('uuid');
+
+const app = express();
+const server = http.createServer(app);
+const io = new Server(server, { maxHttpBufferSize: 50 * 1024 * 1024 });
+
+const uploadDir = path.join(__dirname, 'public', 'uploads');
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, uploadDir),
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname);
+    cb(null, `${uuidv4()}${ext}`);
+  }
+});
+const upload = multer({ storage });
+
+app.use(express.json());
+app.use(express.static(path.join(__dirname, 'public')));
+
+const db = new Database('database.sqlite');
+db.pragma('journal_mode = WAL');
+
+// Инициализация структуры базы данных
+db.exec(`
+  CREATE TABLE IF NOT EXISTS users (
+    id TEXT PRIMARY KEY,
+    username TEXT UNIQUE,
+    password TEXT,
+    display_name TEXT,
+    bio TEXT DEFAULT '',
+    city TEXT DEFAULT '',
+    avatar TEXT DEFAULT '',
+    phone_number TEXT DEFAULT NULL,
+    rubies INTEGER DEFAULT 0,
+    mops_balance REAL DEFAULT 0.0,
+    show_balance_in_profile INTEGER DEFAULT 1,
+    is_premium INTEGER DEFAULT 0,
+    is_admin INTEGER DEFAULT 0,
+    level INTEGER DEFAULT 1,
+    profile_style TEXT DEFAULT 'telegram',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
+
+  CREATE TABLE IF NOT EXISTS nft_usernames (
+    id TEXT PRIMARY KEY,
+    user_id TEXT,
+    username TEXT UNIQUE,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+  );
+
+  CREATE TABLE IF NOT EXISTS badges (
+    id TEXT PRIMARY KEY,
+    user_id TEXT,
+    icon TEXT,
+    title TEXT,
+    FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+  );
+
+  CREATE TABLE IF NOT EXISTS chats (
+    id TEXT PRIMARY KEY,
+    type TEXT,
+    title TEXT,
+    about TEXT DEFAULT '',
+    avatar TEXT DEFAULT '',
+    owner_id TEXT,
+    pinned INTEGER DEFAULT 0,
+    badge_type TEXT DEFAULT 'verified',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
+
+  CREATE TABLE IF NOT EXISTS chat_members (
+    chat_id TEXT,
+    user_id TEXT,
+    role TEXT DEFAULT 'member',
+    PRIMARY KEY(chat_id, user_id)
+  );
+
+  CREATE TABLE IF NOT EXISTS messages (
+    id TEXT PRIMARY KEY,
+    chat_id TEXT,
+    sender_id TEXT,
+    text TEXT,
+    file_url TEXT DEFAULT NULL,
+    file_name TEXT DEFAULT NULL,
+    file_type TEXT DEFAULT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(chat_id) REFERENCES chats(id) ON DELETE CASCADE
+  );
+
+  CREATE TABLE IF NOT EXISTS clans (
+    id TEXT PRIMARY KEY,
+    name TEXT UNIQUE,
+    tag TEXT,
+    leader_id TEXT,
+    members_count INTEGER DEFAULT 1,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
+`);
+
+// Автоматическая миграция колонок на случай старой версии БД
+const ensureColumn = (table, column, definition) => {
+  try {
+    const columns = db.prepare(`PRAGMA table_info(${table})`).all();
+    if (!columns.some(col => col.name === column)) {
+      db.prepare(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`).run();
+    }
+  } catch (e) {
+    console.error(`Migration error on ${table}.${column}:`, e.message);
+  }
+};
+
+ensureColumn('chats', 'pinned', 'INTEGER DEFAULT 0');
+ensureColumn('chats', 'badge_type', "TEXT DEFAULT 'verified'");
+ensureColumn('users', 'rubies', 'INTEGER DEFAULT 0');
+ensureColumn('users', 'mops_balance', 'REAL DEFAULT 0.0');
+ensureColumn('users', 'show_balance_in_profile', 'INTEGER DEFAULT 1');
+ensureColumn('users', 'is_premium', 'INTEGER DEFAULT 0');
+ensureColumn('users', 'level', 'INTEGER DEFAULT 1');
+ensureColumn('users', 'profile_style', "TEXT DEFAULT 'telegram'");
+ensureColumn('users', 'city', "TEXT DEFAULT ''");
+
+// Создание системного админа и каналов
+const initSystemDefaults = () => {
+  let admin = db.prepare('SELECT * FROM users WHERE is_admin = 1 LIMIT 1').get();
+  if (!admin) {
+    const adminId = 'admin-id';
+    db.prepare(`
+      INSERT INTO users (id, username, password, display_name, bio, city, is_admin, phone_number, rubies, mops_balance, is_premium)
+      VALUES (?, ?, ?, ?, ?, ?, 1, '+777 8888 9999', 2500, 150.0, 1)
+    `).run(adminId, 'dfsadsa', 'admin123', 'test', 'Разработчик экосистемы', 'Москва');
+    
+    db.prepare('INSERT INTO badges (id, user_id, icon, title) VALUES (?, ?, ?, ?)').run(uuidv4(), adminId, 'shield-check', 'Level 2');
+    db.prepare('INSERT INTO badges (id, user_id, icon, title) VALUES (?, ?, ?, ?)').run(uuidv4(), adminId, 'flame', 'Halloween');
+    db.prepare('INSERT INTO badges (id, user_id, icon, title) VALUES (?, ?, ?, ?)').run(uuidv4(), adminId, 'badge-check', 'Verified');
+
+    admin = db.prepare('SELECT * FROM users WHERE id = ?').get(adminId);
+  }
+
+  const seedChats = [
+    { id: 'chat-runa-news', type: 'channel', title: 'Runa News', about: 'Официальный новостной ресурс', lastMsg: 'В ближайшее время выйдет гл...', pinned: 1 },
+    { id: 'chat-general', type: 'group', title: 'чат общения', about: 'Главное сообщество участников', lastMsg: 'четко', pinned: 0 },
+    { id: 'chat-runa-chats', type: 'channel', title: 'Runa Chats', about: 'Каталог открытых групп', lastMsg: '@runachat', pinned: 0 }
+  ];
+
+  seedChats.forEach(c => {
+    const exists = db.prepare('SELECT id FROM chats WHERE id = ?').get(c.id);
+    if (!exists) {
+      db.prepare(`
+        INSERT INTO chats (id, type, title, about, owner_id, pinned)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `).run(c.id, c.type, c.title, c.about, admin.id, c.pinned);
+      db.prepare("INSERT OR IGNORE INTO chat_members (chat_id, user_id, role) VALUES (?, ?, 'owner')").run(c.id, admin.id);
+      db.prepare('INSERT INTO messages (id, chat_id, sender_id, text) VALUES (?, ?, ?, ?)').run(uuidv4(), c.id, admin.id, c.lastMsg);
+    }
+  });
+};
+initSystemDefaults();
+
+function getUserFullProfile(userId) {
+  const user = db.prepare('SELECT id, username, display_name, bio, city, avatar, phone_number, rubies, mops_balance, show_balance_in_profile, is_premium, is_admin, level, profile_style, created_at FROM users WHERE id = ?').get(userId);
+  if (!user) return null;
+  const nfts = db.prepare('SELECT username FROM nft_usernames WHERE user_id = ?').all(userId).map(n => n.username);
+  const badges = db.prepare('SELECT icon, title FROM badges WHERE user_id = ?').all(userId);
+  return { ...user, nft_usernames: nfts, badges };
+}
+
+// REST API
+app.post('/api/upload', upload.single('file'), (req, res) => {
+  if (!req.file) return res.status(400).json({ error: 'Файл не загружен' });
+  res.json({
+    url: `/uploads/${req.file.filename}`,
+    name: req.file.originalname,
+    type: req.file.mimetype.startsWith('image/') ? 'image' : 'file'
+  });
+});
+
+app.post('/api/auth/register', (req, res) => {
+  const { username, password, display_name } = req.body;
+  if (!username || !password) return res.status(400).json({ error: 'Заполните обязательные поля' });
+  try {
+    const id = uuidv4();
+    db.prepare(`
+      INSERT INTO users (id, username, password, display_name)
+      VALUES (?, ?, ?, ?)
+    `).run(id, username.toLowerCase().replace('@', ''), password, display_name || username);
+
+    const chats = db.prepare('SELECT id FROM chats').all();
+    const addMember = db.prepare("INSERT OR IGNORE INTO chat_members (chat_id, user_id, role) VALUES (?, ?, 'member')");
+    chats.forEach(c => addMember.run(c.id, id));
+
+    res.json(getUserFullProfile(id));
+  } catch (err) {
+    res.status(400).json({ error: 'Имя пользователя уже занято' });
+  }
+});
+
+app.post('/api/auth/login', (req, res) => {
+  const { username, password } = req.body;
+  const user = db.prepare('SELECT * FROM users WHERE username = ? AND password = ?').get(username.toLowerCase().replace('@', ''), password);
+  if (!user) return res.status(401).json({ error: 'Неверные данные учётной записи' });
+  res.json(getUserFullProfile(user.id));
+});
+
+app.get('/api/users/:identifier', (req, res) => {
+  const { identifier } = req.params;
+  const clean = identifier.toLowerCase().replace('@', '');
+  let user = db.prepare('SELECT id FROM users WHERE id = ? OR username = ?').get(identifier, clean);
+  if (!user) {
+    const nft = db.prepare('SELECT user_id FROM nft_usernames WHERE username = ?').get(clean);
+    if (nft) user = { id: nft.user_id };
+  }
+  if (!user) return res.status(404).json({ error: 'Пользователь не найден' });
+  res.json(getUserFullProfile(user.id));
+});
+
+app.post('/api/user/update', (req, res) => {
+  const { id, display_name, bio, city, profile_style, show_balance } = req.body;
+  db.prepare(`
+    UPDATE users 
+    SET display_name = COALESCE(?, display_name),
+        bio = COALESCE(?, bio),
+        city = COALESCE(?, city),
+        profile_style = COALESCE(?, profile_style),
+        show_balance_in_profile = COALESCE(?, show_balance_in_profile)
+    WHERE id = ?
+  `).run(display_name, bio, city, profile_style, show_balance, id);
+  res.json(getUserFullProfile(id));
+});
+
+// Кланы
+app.post('/api/clans/create', (req, res) => {
+  const { userId, name, tag } = req.body;
+  const user = db.prepare('SELECT rubies FROM users WHERE id = ?').get(userId);
+  if (!user || user.rubies < 2000) {
+    return res.status(400).json({ error: 'Недостаточно рубинов (требуется 2 000 💎)' });
+  }
+  try {
+    const clanId = uuidv4();
+    db.prepare('UPDATE users SET rubies = rubies - 2000 WHERE id = ?').run(userId);
+    db.prepare('INSERT INTO clans (id, name, tag, leader_id) VALUES (?, ?, ?, ?)').run(clanId, name, tag, userId);
+    res.json({ success: true, clanId });
+  } catch (err) {
+    res.status(400).json({ error: 'Клан с таким именем уже существует' });
+  }
+});
+
+// Админ-панель API
+app.get('/api/admin/users', (req, res) => {
+  const users = db.prepare('SELECT * FROM users').all();
+  res.json(users);
+});
+
+app.post('/api/admin/give-currency', (req, res) => {
+  const { userId, rubies, mops } = req.body;
+  db.prepare('UPDATE users SET rubies = rubies + ?, mops_balance = mops_balance + ? WHERE id = ?')
+    .run(rubies || 0, mops || 0, userId);
+  res.json({ success: true });
+});
+
+app.post('/api/admin/assign-phone', (req, res) => {
+  const { userId, phone } = req.body;
+  db.prepare('UPDATE users SET phone_number = ? WHERE id = ?').run(phone, userId);
+  res.json({ success: true });
+});
+
+app.post('/api/admin/assign-nft', (req, res) => {
+  const { userId, nftUsername } = req.body;
+  try {
+    const clean = nftUsername.toLowerCase().replace('@', '');
+    db.prepare('INSERT INTO nft_usernames (id, user_id, username) VALUES (?, ?, ?)').run(uuidv4(), userId, clean);
+    res.json({ success: true });
+  } catch (e) {
+    res.status(400).json({ error: 'NFT юзернейм уже существует' });
+  }
+});
+
+// Socket.IO
+io.on('connection', (socket) => {
+  socket.on('fetch_chats', (userId) => {
+    const chats = db.prepare(`
+      SELECT c.*, cm.role,
+        (SELECT text FROM messages WHERE chat_id = c.id ORDER BY created_at DESC LIMIT 1) as last_message,
+        (SELECT created_at FROM messages WHERE chat_id = c.id ORDER BY created_at DESC LIMIT 1) as last_message_date
+      FROM chats c
+      JOIN chat_members cm ON c.id = cm.chat_id
+      WHERE cm.user_id = ?
+      ORDER BY c.pinned DESC, last_message_date DESC
+    `).all(userId);
+    socket.emit('chats_list', chats);
+  });
+
+  socket.on('join_chat', (chatId) => {
+    socket.join(chatId);
+    const messages = db.prepare(`
+      SELECT m.*, u.display_name, u.username, u.avatar
+      FROM messages m
+      JOIN users u ON m.sender_id = u.id
+      WHERE m.chat_id = ?
+      ORDER BY m.created_at ASC
+    `).all(chatId);
+    socket.emit('chat_history', { chatId, messages });
+  });
+
+  socket.on('send_message', (data) => {
+    const { chatId, senderId, text, fileUrl, fileName, fileType } = data;
+    const chat = db.prepare('SELECT * FROM chats WHERE id = ?').get(chatId);
+    if (chat && chat.type === 'channel') {
+      const member = db.prepare('SELECT role FROM chat_members WHERE chat_id = ? AND user_id = ?').get(chatId, senderId);
+      if (!member || (member.role !== 'owner' && member.role !== 'admin')) {
+        return socket.emit('error_message', 'Только администраторы могут писать в канал');
+      }
+    }
+
+    const msgId = uuidv4();
+    db.prepare(`
+      INSERT INTO messages (id, chat_id, sender_id, text, file_url, file_name, file_type)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `).run(msgId, chatId, senderId, text || '', fileUrl || null, fileName || null, fileType || null);
+
+    const message = db.prepare(`
+      SELECT m.*, u.display_name, u.username, u.avatar
+      FROM messages m
+      JOIN users u ON m.sender_id = u.id
+      WHERE m.id = ?
+    `).get(msgId);
+
+    io.to(chatId).emit('new_message', message);
+  });
+
+  socket.on('typing', ({ chatId, username }) => {
+    socket.to(chatId).emit('user_typing', { chatId, username });
+  });
+
+  socket.on('stop_typing', ({ chatId, username }) => {
+    socket.to(chatId).emit('user_stop_typing', { chatId, username });
+  });
+});
+
+const PORT = process.env.PORT || 3001;
+server.listen(PORT, () => {
+  console.log(`[CookieChat Server] Running on http://localhost:${PORT}`);
+});

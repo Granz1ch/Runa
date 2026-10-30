@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#0a0a0c">
+  <title>Runa — нет подключения</title>
+  <link rel="icon" href="/icons/favicon-32.png" sizes="32x32" type="image/png">
+  <style>
+    :root { color-scheme: dark; }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; }
+    body {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      background: radial-gradient(circle at 20% 0%, #241046 0%, #0a0a0c 46%, #050507 100%);
+      color: #fff;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      overflow: hidden;
+    }
+    .wrap {
+      width: 100%;
+      max-width: 380px;
+      text-align: center;
+      animation: rise .5s cubic-bezier(.2,.9,.3,1.1) both;
+    }
+    .icon {
+      width: 104px;
+      height: 104px;
+      margin: 0 auto 26px;
+      border-radius: 28px;
+      box-shadow: 0 24px 60px rgba(120, 60, 220, .4);
+      animation: float 4s ease-in-out infinite;
+    }
+    .icon img { width: 100%; height: 100%; display: block; border-radius: 28px; }
+    h1 { margin: 0 0 10px; font-size: 25px; letter-spacing: -.02em; }
+    p { margin: 0 auto 26px; max-width: 300px; font-size: 14px; line-height: 1.55; color: rgba(255,255,255,.62); }
+    .status {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 24px;
+      padding: 7px 14px;
+      border-radius: 999px;
+      background: rgba(255, 69, 58, .1);
+      border: 1px solid rgba(255, 69, 58, .28);
+      color: #FF8A80;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .status.online { background: rgba(48,209,88,.1); border-color: rgba(48,209,88,.3); color: #7CF29A; }
+    .dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; animation: pulse 1.8s ease-out infinite; }
+    button {
+      width: 100%;
+      padding: 13px 18px;
+      border: none;
+      border-radius: 15px;
+      background: linear-gradient(135deg, #8B5CF6, #D946EF);
+      color: #fff;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 12px 34px rgba(150, 70, 240, .38);
+      transition: transform .16s, filter .16s;
+    }
+    button:hover { filter: brightness(1.08); transform: translateY(-1px); }
+    button:active { transform: scale(.97); }
+    .hint { margin-top: 18px; font-size: 11.5px; color: rgba(255,255,255,.34); }
+    @keyframes rise { from { opacity: 0; transform: translateY(22px) scale(.97); } to { opacity: 1; transform: none; } }
+    @keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-7px); } }
+    @keyframes pulse { 0%,100% { box-shadow: 0 0 0 0 currentColor; opacity: 1; } 60% { box-shadow: 0 0 0 6px transparent; opacity: .6; } }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <div class="icon"><img src="/icons/icon-192.png" alt="Runa"></div>
+    <h1>Нет подключения</h1>
+    <p>Проверьте интернет — Runa подключится автоматически, как только сеть вернётся.</p>
+    <div class="status" id="status"><span class="dot"></span><span id="status-text">Офлайн</span></div>
+    <button id="retry">Попробовать снова</button>
+    <div class="hint">Сообщения и чаты сохранятся и синхронизируются позже.</div>
+  </main>
+  <script>
+    const status = document.getElementById('status');
+    const statusText = document.getElementById('status-text');
+    const retry = document.getElementById('retry');
+    function sync() {
+      const online = navigator.onLine;
+      status.classList.toggle('online', online);
+      statusText.textContent = online ? 'Соединение восстановлено' : 'Офлайн';
+      if (online) setTimeout(() => location.replace('/'), 900);
+    }
+    retry.addEventListener('click', () => {
+      if (navigator.onLine) location.replace('/');
+      else statusText.textContent = 'Всё ещё нет сети';
+    });
+    window.addEventListener('online', sync);
+    window.addEventListener('offline', sync);
+    sync();
+  </script>
+</body>
+</html>

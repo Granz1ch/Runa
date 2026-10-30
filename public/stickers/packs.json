@@ -1,0 +1,40 @@
+{
+  "packs": [
+    {
+      "id": "tiktok",
+      "title": "TikTok You",
+      "cover": "/stickers/tiktok/001.webp",
+      "stickers": [
+        "/stickers/tiktok/001.webp",
+        "/stickers/tiktok/002.webp",
+        "/stickers/tiktok/003.webp",
+        "/stickers/tiktok/004.webp",
+        "/stickers/tiktok/005.webp",
+        "/stickers/tiktok/006.webp",
+        "/stickers/tiktok/007.webp",
+        "/stickers/tiktok/008.webp",
+        "/stickers/tiktok/009.webp",
+        "/stickers/tiktok/010.webp",
+        "/stickers/tiktok/011.webp",
+        "/stickers/tiktok/012.webp",
+        "/stickers/tiktok/013.webp",
+        "/stickers/tiktok/014.webp",
+        "/stickers/tiktok/015.webp",
+        "/stickers/tiktok/016.webp",
+        "/stickers/tiktok/017.webp",
+        "/stickers/tiktok/018.webp",
+        "/stickers/tiktok/019.webp",
+        "/stickers/tiktok/020.webp",
+        "/stickers/tiktok/021.webp",
+        "/stickers/tiktok/022.webp",
+        "/stickers/tiktok/023.webp",
+        "/stickers/tiktok/024.webp",
+        "/stickers/tiktok/025.webp",
+        "/stickers/tiktok/026.webp",
+        "/stickers/tiktok/027.webp",
+        "/stickers/tiktok/028.webp",
+        "/stickers/tiktok/029.webp"
+      ]
+    }
+  ]
+}

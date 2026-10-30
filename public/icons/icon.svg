@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#7C3AED"/>
+      <stop offset="0.55" stop-color="#A855F7"/>
+      <stop offset="1" stop-color="#EC4899"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.28" cy="0.2" r="0.85">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.34"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="14" stdDeviation="16" flood-color="#2A0A4A" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+  <rect width="512" height="512" rx="116" fill="url(#bg)"/>
+  <rect width="512" height="512" rx="116" fill="url(#glow)"/>
+  <g filter="url(#shadow)">
+    <path d="M148 148h216c26.5 0 48 21.5 48 48v128c0 26.5-21.5 48-48 48H214l-62 46c-8 6-19-0.6-19-10.6V372h-1c-20-4.4-32-20.6-32-44V196c0-26.5 21.5-48 48-48z" fill="#FFFFFF"/>
+  </g>
+  <circle cx="196" cy="260" r="17" fill="#8B5CF6"/>
+  <circle cx="256" cy="260" r="17" fill="#A855F7"/>
+  <circle cx="316" cy="260" r="17" fill="#D946EF"/>
+</svg>

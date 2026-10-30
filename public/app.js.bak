@@ -1,0 +1,478 @@
+let currentUser = null;
+let currentChat = null;
+let isRegisterMode = false;
+let socket = null;
+let typingTimeout = null;
+
+document.addEventListener('DOMContentLoaded', () => {
+  lucide.createIcons();
+  setupActivationEvents();
+  setupWorkspaceEvents();
+  setupModalNavigation();
+});
+
+// АКТИВАЦИЯ MAC
+function setupActivationEvents() {
+  const switchBtn = document.getElementById('act-switch-mode');
+  const nameBox = document.getElementById('act-name-box');
+  const header = document.getElementById('act-header');
+  const submitBtn = document.getElementById('act-submit-btn');
+  const form = document.getElementById('activation-form');
+
+  switchBtn.addEventListener('click', () => {
+    isRegisterMode = !isRegisterMode;
+    nameBox.style.display = isRegisterMode ? 'block' : 'none';
+    header.textContent = isRegisterMode ? 'Создать учётную запись Mac' : 'Добро пожаловать в CookieChat';
+    submitBtn.textContent = isRegisterMode ? 'Активировать' : 'Продолжить';
+    switchBtn.textContent = isRegisterMode ? 'Уже есть аккаунт' : 'Создать новую учётную запись';
+  });
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const username = document.getElementById('act-username').value.trim();
+    const password = document.getElementById('act-password').value.trim();
+    const fullname = document.getElementById('act-fullname').value.trim();
+
+    const endpoint = isRegisterMode ? '/api/auth/register' : '/api/auth/login';
+    const payload = isRegisterMode ? { username, password, display_name: fullname } : { username, password };
+
+    try {
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+
+      currentUser = data;
+      startMainApp();
+    } catch (err) {
+      alert(err.message);
+    }
+  });
+}
+
+function startMainApp() {
+  document.getElementById('mac-activation-screen').style.display = 'none';
+  document.getElementById('main-app').style.display = 'block';
+
+  updateUserUI();
+
+  if (currentUser.is_admin) {
+    document.getElementById('nav-admin').style.display = 'flex';
+  }
+
+  socket = io();
+  socket.emit('fetch_chats', currentUser.id);
+
+  socket.on('chats_list', renderChats);
+  socket.on('chat_history', ({ chatId, messages }) => {
+    if (currentChat && currentChat.id === chatId) {
+      renderMessages(messages);
+    }
+  });
+
+  socket.on('new_message', (msg) => {
+    if (currentChat && currentChat.id === msg.chat_id) {
+      appendMessage(msg);
+    }
+    socket.emit('fetch_chats', currentUser.id);
+  });
+
+  socket.on('user_typing', ({ chatId, username }) => {
+    if (currentChat && currentChat.id === chatId) {
+      document.getElementById('opened-chat-status').textContent = `${username} печатает...`;
+    }
+  });
+
+  socket.on('user_stop_typing', ({ chatId }) => {
+    if (currentChat && currentChat.id === chatId) {
+      document.getElementById('opened-chat-status').textContent = 'в сети';
+    }
+  });
+}
+
+function updateUserUI() {
+  const initial = currentUser.display_name.charAt(0).toUpperCase();
+
+  // Верхний топбар
+  document.getElementById('topbar-name').textContent = currentUser.display_name;
+  document.getElementById('topbar-username').textContent = `@${currentUser.username}`;
+  document.getElementById('topbar-avatar').textContent = initial;
+  document.getElementById('story-my-avatar').textContent = initial;
+
+  // Шторка
+  document.getElementById('drawer-name').textContent = currentUser.display_name;
+  document.getElementById('drawer-username').textContent = `@${currentUser.username}`;
+  document.getElementById('drawer-avatar').textContent = initial;
+  document.getElementById('drawer-rubies-count').textContent = currentUser.rubies || 0;
+
+  // Профиль окно
+  document.getElementById('card-name').textContent = currentUser.display_name;
+  document.getElementById('card-username').textContent = `@${currentUser.username}`;
+  document.getElementById('card-avatar').textContent = initial;
+  document.getElementById('card-balance-num').textContent = (currentUser.mops_balance || 0).toFixed(2);
+  document.getElementById('card-level').textContent = currentUser.level || 1;
+
+  // Редактор профиля
+  document.getElementById('edit-name-val').value = currentUser.display_name;
+  document.getElementById('edit-username-val').textContent = currentUser.username;
+  document.getElementById('edit-bio-val').value = currentUser.bio || '';
+  document.getElementById('edit-city-val').value = currentUser.city || '';
+  document.getElementById('edit-avatar-preview').textContent = initial;
+
+  // Кошелек
+  document.getElementById('wallet-mops-val').textContent = (currentUser.mops_balance || 0).toFixed(2);
+  document.getElementById('wallet-card-holder').textContent = `@${currentUser.username}`;
+  document.getElementById('wallet-rubies-est').textContent = currentUser.rubies || 0;
+
+  // Рубины
+  document.getElementById('rubies-card-user').textContent = `@${currentUser.username}`;
+  document.getElementById('rubies-main-count').textContent = currentUser.rubies || 0;
+
+  // Кастомизация
+  document.getElementById('custom-user-name').textContent = currentUser.display_name;
+  document.getElementById('custom-preview-name-1').textContent = currentUser.display_name;
+  document.getElementById('live-name').textContent = currentUser.display_name;
+  document.getElementById('live-handle').textContent = `@${currentUser.username}`;
+
+  // Настройки
+  document.getElementById('settings-user-name').textContent = currentUser.display_name;
+  document.getElementById('settings-user-handle').textContent = `@${currentUser.username}`;
+
+  lucide.createIcons();
+}
+
+function renderChats(chats) {
+  const container = document.getElementById('chats-list-container');
+  container.innerHTML = '';
+
+  chats.forEach(chat => {
+    const el = document.createElement('div');
+    el.className = `chat-row-item ${currentChat && currentChat.id === chat.id ? 'active' : ''}`;
+    el.innerHTML = `
+      <div class="avatar-circle-md">${chat.title.charAt(0).toUpperCase()}</div>
+      <div class="chat-meta">
+        <div class="chat-meta-top">
+          <span class="chat-row-title">${chat.title} <i data-lucide="badge-check" class="verified-blue"></i></span>
+          ${chat.pinned ? '<i data-lucide="pin" style="width:12px; height:12px; color:#8E8E93;"></i>' : ''}
+        </div>
+        <div class="chat-row-preview">${chat.last_message || 'Нет сообщений'}</div>
+      </div>
+    `;
+    el.addEventListener('click', () => {
+      currentChat = chat;
+      document.querySelectorAll('.chat-row-item').forEach(r => r.classList.remove('active'));
+      el.classList.add('active');
+
+      document.getElementById('chat-unselected').style.display = 'none';
+      document.getElementById('chat-opened').style.display = 'flex';
+      document.getElementById('opened-chat-title').textContent = chat.title;
+
+      socket.emit('join_chat', chat.id);
+    });
+    container.appendChild(el);
+  });
+  lucide.createIcons();
+}
+
+function renderMessages(messages) {
+  const stream = document.getElementById('chat-messages-stream');
+  stream.innerHTML = '';
+  messages.forEach(appendMessage);
+  stream.scrollTop = stream.scrollHeight;
+}
+
+function appendMessage(msg) {
+  const stream = document.getElementById('chat-messages-stream');
+  const isMe = msg.sender_id === currentUser.id;
+
+  const bubble = document.createElement('div');
+  bubble.className = `bubble ${isMe ? 'out' : 'in'}`;
+
+  let content = '';
+  if (!isMe) {
+    content += `<div style="font-size:11px; color:#64D2FF; font-weight:700; margin-bottom:2px;">${msg.display_name}</div>`;
+  }
+  if (msg.text) {
+    content += `<div>${msg.text}</div>`;
+  }
+  if (msg.file_url) {
+    if (msg.file_type === 'image') {
+      content += `<img src="${msg.file_url}" style="max-width:100%; border-radius:10px; margin-top:5px;">`;
+    } else {
+      content += `<a href="${msg.file_url}" download style="color:#fff; display:block; margin-top:5px;">📎 ${msg.file_name}</a>`;
+    }
+  }
+
+  bubble.innerHTML = content;
+  stream.appendChild(bubble);
+  stream.scrollTop = stream.scrollHeight;
+}
+
+// РАБОЧИЕ КНОПКИ И МОДАЛЬНЫЕ ОКНА
+function setupWorkspaceEvents() {
+  const composer = document.getElementById('composer-textarea');
+  const sendBtn = document.getElementById('btn-send');
+  const attachBtn = document.getElementById('btn-attach');
+  const fileInput = document.getElementById('media-file-input');
+
+  const send = () => {
+    const text = composer.value.trim();
+    if (!text || !currentChat) return;
+    socket.emit('send_message', {
+      chatId: currentChat.id,
+      senderId: currentUser.id,
+      text
+    });
+    composer.value = '';
+    socket.emit('stop_typing', { chatId: currentChat.id, username: currentUser.display_name });
+  };
+
+  sendBtn.addEventListener('click', send);
+  composer.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      send();
+    }
+  });
+
+  composer.addEventListener('input', () => {
+    if (!currentChat) return;
+    socket.emit('typing', { chatId: currentChat.id, username: currentUser.display_name });
+    clearTimeout(typingTimeout);
+    typingTimeout = setTimeout(() => {
+      socket.emit('stop_typing', { chatId: currentChat.id, username: currentUser.display_name });
+    }, 1500);
+  });
+
+  attachBtn.addEventListener('click', () => fileInput.click());
+  fileInput.addEventListener('change', async () => {
+    const file = fileInput.files[0];
+    if (!file || !currentChat) return;
+    const fd = new FormData();
+    fd.append('file', file);
+
+    const res = await fetch('/api/upload', { method: 'POST', body: fd });
+    const data = await res.json();
+
+    socket.emit('send_message', {
+      chatId: currentChat.id,
+      senderId: currentUser.id,
+      text: '',
+      fileUrl: data.url,
+      fileName: data.name,
+      fileType: data.type
+    });
+    fileInput.value = '';
+  });
+
+  document.getElementById('logout-btn').addEventListener('click', () => location.reload());
+}
+
+function setupModalNavigation() {
+  const drawerOverlay = document.getElementById('drawer-overlay');
+  document.getElementById('toggle-drawer-btn').addEventListener('click', () => {
+    drawerOverlay.style.display = 'block';
+  });
+
+  drawerOverlay.addEventListener('click', (e) => {
+    if (e.target === drawerOverlay) drawerOverlay.style.display = 'none';
+  });
+
+  document.querySelectorAll('[data-close]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.getElementById(btn.dataset.close).style.display = 'none';
+    });
+  });
+
+  // Открытие профиля со скриншота 2
+  const profileCard = document.getElementById('modal-profile-card');
+  const openProf = () => {
+    drawerOverlay.style.display = 'none';
+    profileCard.style.display = 'flex';
+  };
+  document.getElementById('drawer-user-card-btn').addEventListener('click', openProf);
+  document.getElementById('topbar-user-badge').addEventListener('click', openProf);
+
+  // Редактирование со скриншота 3
+  const editModal = document.getElementById('modal-edit-profile');
+  document.getElementById('btn-edit-profile-open').addEventListener('click', () => {
+    profileCard.style.display = 'none';
+    editModal.style.display = 'flex';
+  });
+  document.getElementById('btn-edit-profile-back').addEventListener('click', () => {
+    editModal.style.display = 'none';
+    profileCard.style.display = 'flex';
+  });
+
+  // Сохранение профиля
+  document.getElementById('btn-save-profile').addEventListener('click', async () => {
+    const res = await fetch('/api/user/update', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        id: currentUser.id,
+        display_name: document.getElementById('edit-name-val').value.trim(),
+        bio: document.getElementById('edit-bio-val').value.trim(),
+        city: document.getElementById('edit-city-val').value.trim()
+      })
+    });
+    currentUser = await res.json();
+    updateUserUI();
+    editModal.style.display = 'none';
+    profileCard.style.display = 'flex';
+  });
+
+  // Кастомизация со скриншотов 4 и 5
+  const customModal = document.getElementById('modal-customization');
+  document.getElementById('btn-open-customization').addEventListener('click', () => {
+    editModal.style.display = 'none';
+    customModal.style.display = 'flex';
+  });
+
+  document.querySelectorAll('.custom-tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.custom-tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      document.querySelectorAll('.custom-view-panel').forEach(p => p.style.display = 'none');
+      const target = document.getElementById(btn.dataset.tab);
+      if (target) target.style.display = 'block';
+    });
+  });
+
+  document.querySelectorAll('.style-choice-item').forEach(item => {
+    item.addEventListener('click', () => {
+      document.querySelectorAll('.style-choice-item').forEach(s => s.classList.remove('active'));
+      item.classList.add('active');
+    });
+  });
+
+  // Mops Wallet со скриншота 6
+  document.getElementById('nav-wallet').addEventListener('click', () => {
+    drawerOverlay.style.display = 'none';
+    document.getElementById('modal-wallet').style.display = 'flex';
+  });
+  document.getElementById('card-balance-pill').addEventListener('click', () => {
+    profileCard.style.display = 'none';
+    document.getElementById('modal-wallet').style.display = 'flex';
+  });
+
+  // Рубины со скриншота 7
+  document.getElementById('nav-rubies').addEventListener('click', () => {
+    drawerOverlay.style.display = 'none';
+    document.getElementById('modal-rubies').style.display = 'flex';
+  });
+  document.getElementById('btn-replenish-rubies').addEventListener('click', async () => {
+    await fetch('/api/admin/give-currency', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId: currentUser.id, rubies: 500, mops: 10 })
+    });
+    const res = await fetch(`/api/users/${currentUser.id}`);
+    currentUser = await res.json();
+    updateUserUI();
+    alert('Баланс пополнен на +500 💎 и +10 MOPS!');
+  });
+
+  // Кланы со скриншота 8
+  document.getElementById('nav-clans').addEventListener('click', () => {
+    drawerOverlay.style.display = 'none';
+    document.getElementById('modal-clans').style.display = 'flex';
+  });
+  document.getElementById('btn-clan-buy').addEventListener('click', async () => {
+    const name = prompt('Введите название клана:');
+    if (!name) return;
+    const tag = prompt('Введите тег клана (до 4 символов):');
+    const res = await fetch('/api/clans/create', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId: currentUser.id, name, tag })
+    });
+    const data = await res.json();
+    if (res.ok) {
+      alert(`Клан [${tag}] ${name} успешно создан!`);
+      location.reload();
+    } else {
+      alert(data.error);
+    }
+  });
+
+  // Настройки со скриншота 9
+  document.getElementById('nav-settings').addEventListener('click', () => {
+    drawerOverlay.style.display = 'none';
+    document.getElementById('modal-settings').style.display = 'flex';
+  });
+
+  // Админ-панель
+  document.getElementById('nav-admin').addEventListener('click', async () => {
+    drawerOverlay.style.display = 'none';
+    document.getElementById('modal-admin').style.display = 'flex';
+    loadAdminTable();
+  });
+}
+
+async function loadAdminTable() {
+  const res = await fetch('/api/admin/users');
+  const users = await res.json();
+  const tbody = document.getElementById('admin-users-tbody');
+  tbody.innerHTML = '';
+
+  users.forEach(u => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${u.display_name}</td>
+      <td>@${u.username}</td>
+      <td>${u.phone_number || '—'}</td>
+      <td>${u.rubies} 💎</td>
+      <td>${u.mops_balance} MOPS</td>
+      <td>
+        <button class="admin-action-btn" onclick="adminAddCurrency('${u.id}')">+ Валюта</button>
+        <button class="admin-action-btn" onclick="adminSetPhone('${u.id}')">+777 Номер</button>
+        <button class="admin-action-btn" onclick="adminSetNft('${u.id}')">+ NFT</button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+window.adminAddCurrency = async (userId) => {
+  await fetch('/api/admin/give-currency', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ userId, rubies: 2000, mops: 50.0 })
+  });
+  alert('Начислено +2000 💎 и +50 MOPS');
+  loadAdminTable();
+};
+
+window.adminSetPhone = async (userId) => {
+  const p1 = Math.floor(1000 + Math.random() * 9000);
+  const p2 = Math.floor(1000 + Math.random() * 9000);
+  const phone = `+777 ${p1} ${p2}`;
+  await fetch('/api/admin/assign-phone', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ userId, phone })
+  });
+  alert(`Выдан номер: ${phone}`);
+  loadAdminTable();
+};
+
+window.adminSetNft = async (userId) => {
+  const nft = prompt('Введите NFT-юзернейм:');
+  if (!nft) return;
+  const res = await fetch('/api/admin/assign-nft', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ userId, nftUsername: nft })
+  });
+  const data = await res.json();
+  if (res.ok) {
+    alert(`NFT @${nft} успешно привязан!`);
+    loadAdminTable();
+  } else {
+    alert(data.error);
+  }
+};

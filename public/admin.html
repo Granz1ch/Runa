@@ -1,0 +1,2391 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#070908">
+<meta name="robots" content="noindex,nofollow">
+<title>Runa Control — админ-панель</title>
+<link rel="icon" href="/icons/favicon-32.png">
+<style>
+:root{
+  --bg:#070908;
+  --panel:#0c0f0d;
+  --panel-2:#111512;
+  --panel-3:#161b17;
+  --line:rgba(255,255,255,.075);
+  --line-2:rgba(255,255,255,.12);
+  --mint:#7dffb3;
+  --mint-soft:rgba(125,255,179,.12);
+  --mint-line:rgba(125,255,179,.28);
+  --violet:#b18cff;
+  --violet-soft:rgba(177,140,255,.12);
+  --blue:#6fb8ff;
+  --amber:#ffd166;
+  --danger:#ff6b6b;
+  --text:#eef4ef;
+  --muted:#8b978f;
+  --dim:#5d6861;
+  --r:14px;
+  --r-lg:22px;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --sans:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+[hidden]{display:none!important}
+html,body{height:100%}
+body{
+  font-family:var(--sans);background:var(--bg);color:var(--text);
+  -webkit-font-smoothing:antialiased;overflow:hidden;
+}
+body::before{
+  content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background-image:
+    radial-gradient(900px 500px at 82% -10%,rgba(125,255,179,.10),transparent 60%),
+    radial-gradient(700px 420px at 6% 104%,rgba(177,140,255,.09),transparent 62%),
+    linear-gradient(rgba(255,255,255,.022) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,255,255,.022) 1px,transparent 1px);
+  background-size:auto,auto,46px 46px,46px 46px;
+  mask-image:radial-gradient(1200px 900px at 60% 0%,#000 30%,transparent 100%);
+}
+::-webkit-scrollbar{width:9px;height:9px}
+::-webkit-scrollbar-thumb{background:#242b26;border-radius:9px;border:2px solid var(--bg)}
+::-webkit-scrollbar-track{background:transparent}
+a{color:inherit}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer;border:none;background:none}
+img{display:block}
+.sprite{position:absolute;width:0;height:0;overflow:hidden}
+.ico{width:18px;height:18px;flex:0 0 auto;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;vertical-align:middle}
+.ico.sm{width:15px;height:15px}
+.ico.lg{width:22px;height:22px}
+
+/* ============ LOGIN ============ */
+#login-screen{
+  position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;
+  background:radial-gradient(900px 600px at 50% -10%,rgba(125,255,179,.10),transparent 60%),#050706;
+}
+.login-card{
+  width:392px;max-width:calc(100vw - 32px);
+  background:linear-gradient(180deg,rgba(19,24,20,.96),rgba(9,12,10,.98));
+  border:1px solid var(--line-2);border-radius:26px;padding:34px 30px 30px;
+  box-shadow:0 40px 120px rgba(0,0,0,.75);backdrop-filter:blur(20px);
+}
+.login-logo{
+  width:60px;height:60px;border-radius:19px;margin:0 auto 18px;
+  display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(145deg,#7dffb3,#2ecc8f 55%,#1f9f7a);
+  color:#04120b;box-shadow:0 14px 36px rgba(70,220,150,.28);
+}
+.login-logo .ico{width:30px;height:30px;stroke-width:2.2}
+.login-card h1{font-size:21px;text-align:center;letter-spacing:-.01em}
+.login-card .sub{text-align:center;color:var(--muted);font-size:12.5px;margin:7px 0 26px;line-height:1.5}
+.field{margin-bottom:13px}
+.field>label,.field-label{
+  display:block;font-size:10.5px;font-weight:700;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--dim);margin-bottom:6px;
+}
+.input,.select,textarea.input{
+  width:100%;background:var(--panel-3);border:1px solid var(--line-2);
+  border-radius:11px;padding:11px 13px;color:var(--text);outline:none;
+  transition:border-color .15s,box-shadow .15s,background .15s;font-size:13.5px;
+}
+.input::placeholder{color:#4e5952}
+.input:focus,.select:focus,textarea.input:focus{
+  border-color:var(--mint-line);box-shadow:0 0 0 3px rgba(125,255,179,.09);background:#121713;
+}
+textarea.input{resize:vertical;min-height:92px;line-height:1.55}
+.select{appearance:none;background-image:linear-gradient(45deg,transparent 50%,#7b8780 50%),linear-gradient(135deg,#7b8780 50%,transparent 50%);background-position:calc(100% - 17px) 50%,calc(100% - 12px) 50%;background-size:5px 5px,5px 5px;background-repeat:no-repeat;padding-right:34px}
+
+/* ============ BUTTONS ============ */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:7px;
+  border:1px solid var(--line-2);background:var(--panel-3);color:var(--text);
+  padding:9px 14px;border-radius:11px;font-size:12.5px;font-weight:600;
+  transition:background .15s,border-color .15s,transform .12s,color .15s;
+  white-space:nowrap;line-height:1.2;
+}
+.btn:hover{background:#1d231e;border-color:rgba(255,255,255,.18)}
+.btn:active{transform:scale(.98)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn-primary{
+  background:linear-gradient(145deg,#8bffbe,#4fe39c 70%,#38cf8b);
+  border-color:transparent;color:#04120b;font-weight:700;
+  box-shadow:0 8px 22px rgba(80,225,155,.2);
+}
+.btn-primary:hover{background:linear-gradient(145deg,#9dffc9,#5cf0a8 70%,#45d998);border-color:transparent}
+.btn-ghost{background:transparent;border-color:var(--line)}
+.btn-ghost:hover{background:rgba(255,255,255,.04)}
+.btn-danger{background:rgba(255,107,107,.1);border-color:rgba(255,107,107,.3);color:#ff9b9b}
+.btn-danger:hover{background:rgba(255,107,107,.18);border-color:rgba(255,107,107,.45)}
+.btn-violet{background:var(--violet-soft);border-color:rgba(177,140,255,.3);color:#d9c4ff}
+.btn-violet:hover{background:rgba(177,140,255,.2)}
+.btn-sm{padding:6px 10px;font-size:11.5px;border-radius:9px}
+.btn-block{width:100%}
+.icon-btn{
+  width:36px;height:36px;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;
+  border:1px solid var(--line);background:rgba(255,255,255,.025);color:var(--muted);
+  transition:background .15s,color .15s,border-color .15s;
+}
+.icon-btn:hover{background:rgba(255,255,255,.06);color:var(--text);border-color:var(--line-2)}
+.icon-btn.danger:hover{color:#ff9b9b;border-color:rgba(255,107,107,.35);background:rgba(255,107,107,.1)}
+
+/* ============ SHELL ============ */
+#app-shell{position:relative;display:flex;height:100vh;height:100dvh}
+.sidebar{
+  width:252px;flex:0 0 252px;display:flex;flex-direction:column;
+  background:linear-gradient(180deg,rgba(13,17,14,.96),rgba(7,9,8,.99));
+  border-right:1px solid var(--line);padding:18px 14px 14px;
+}
+.brand{display:flex;align-items:center;gap:11px;padding:4px 8px 20px}
+.brand-mark{
+  width:40px;height:40px;border-radius:13px;flex:0 0 auto;
+  display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(145deg,#7dffb3,#2ecc8f 60%,#1f9f7a);
+  color:#04120b;box-shadow:0 8px 22px rgba(70,220,150,.24);
+}
+.brand-mark .ico{width:21px;height:21px;stroke-width:2.2}
+.brand-text{display:flex;flex-direction:column;line-height:1.15}
+.brand-text b{font-size:14.5px;letter-spacing:-.01em}
+.brand-text small{font-size:10px;color:var(--dim);letter-spacing:.14em;text-transform:uppercase;font-weight:600;margin-top:3px}
+.nav-label{font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;color:#49534c;font-weight:700;padding:0 10px;margin:10px 0 7px}
+.nav{display:flex;flex-direction:column;gap:2px;overflow-y:auto;flex:1;margin:0 -4px;padding:0 4px}
+.nav-item{
+  display:flex;align-items:center;gap:11px;width:100%;text-align:left;
+  padding:9px 11px;border-radius:11px;color:var(--muted);font-size:13px;font-weight:500;
+  transition:background .15s,color .15s;position:relative;
+}
+.nav-item .ico{width:17px;height:17px;opacity:.9}
+.nav-item:hover{background:rgba(255,255,255,.045);color:var(--text)}
+.nav-item.active{background:linear-gradient(90deg,rgba(125,255,179,.14),rgba(125,255,179,.04));color:#c9ffdf}
+.nav-item.active::before{
+  content:'';position:absolute;left:0;top:9px;bottom:9px;width:2.5px;border-radius:3px;background:var(--mint);
+}
+.nav-item .count{
+  margin-left:auto;font-size:10px;font-weight:700;min-width:20px;height:18px;padding:0 6px;
+  border-radius:9px;background:rgba(255,255,255,.07);color:var(--muted);
+  display:inline-flex;align-items:center;justify-content:center;
+}
+.nav-item.active .count{background:rgba(125,255,179,.18);color:#b8ffd5}
+.sidebar-foot{border-top:1px solid var(--line);padding-top:12px;margin-top:10px}
+.side-user{display:flex;align-items:center;gap:10px;padding:7px 8px;border-radius:11px;margin-bottom:6px}
+.side-user .av{
+  width:34px;height:34px;border-radius:11px;flex:0 0 auto;overflow:hidden;
+  display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;
+  background:linear-gradient(145deg,#2b3a31,#1a2420);color:#a8ffcc;border:1px solid var(--line-2);
+}
+.side-user .av img{width:100%;height:100%;object-fit:cover}
+.side-user .meta{min-width:0;line-height:1.2}
+.side-user .meta b{display:block;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.side-user .meta small{display:block;font-size:10.5px;color:var(--dim)}
+.side-actions{display:flex;gap:6px}
+.side-actions .btn{flex:1;font-size:11.5px;padding:8px}
+
+/* ============ MAIN ============ */
+.main{flex:1;display:flex;flex-direction:column;min-width:0;position:relative}
+.topbar{
+  flex:0 0 auto;display:flex;align-items:center;gap:14px;
+  padding:15px 26px;border-bottom:1px solid var(--line);
+  background:rgba(7,9,8,.72);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+}
+.topbar-title{display:flex;flex-direction:column;line-height:1.15;min-width:0}
+.topbar-title h1{font-size:18px;font-weight:700;letter-spacing:-.015em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.topbar-title small{font-size:11px;color:var(--dim);margin-top:3px}
+.topbar-spacer{flex:1}
+.topbar-search{position:relative;width:260px;max-width:34vw}
+.topbar-search .ico{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--dim);width:15px;height:15px;pointer-events:none}
+.topbar-search input{
+  width:100%;padding:9px 12px 9px 34px;border-radius:11px;font-size:12.5px;
+  background:var(--panel-2);border:1px solid var(--line);color:var(--text);outline:none;
+}
+.topbar-search input:focus{border-color:var(--mint-line);box-shadow:0 0 0 3px rgba(125,255,179,.08)}
+.topbar-search input::placeholder{color:#4e5952}
+.topbar-actions{display:flex;align-items:center;gap:7px}
+.content{flex:1;overflow-y:auto;padding:24px 26px 60px;scroll-behavior:smooth}
+.view{display:none;animation:viewIn .28s cubic-bezier(.2,.8,.25,1) both}
+.view.active{display:block}
+@keyframes viewIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+/* ============ SHARED ============ */
+.section-head{display:flex;align-items:flex-end;justify-content:space-between;gap:14px;margin-bottom:16px;flex-wrap:wrap}
+.section-head h2{font-size:15px;font-weight:700;letter-spacing:-.01em}
+.section-head p{font-size:12px;color:var(--dim);margin-top:3px;line-height:1.4}
+.toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.toolbar .grow{flex:1}
+.card{
+  background:linear-gradient(180deg,rgba(17,21,18,.85),rgba(12,15,13,.92));
+  border:1px solid var(--line);border-radius:var(--r-lg);padding:18px;
+}
+.card.pad-0{padding:0;overflow:hidden}
+.card-title{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--dim);margin-bottom:14px}
+.muted{color:var(--muted)}
+.dim{color:var(--dim)}
+.mono{font-family:var(--mono);font-size:11px}
+.hint{font-size:11.5px;color:var(--dim);line-height:1.5}
+
+.stat-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:22px}
+.stat{
+  position:relative;overflow:hidden;padding:16px 17px;border-radius:18px;
+  background:linear-gradient(160deg,rgba(20,26,22,.9),rgba(11,14,12,.95));
+  border:1px solid var(--line);
+}
+.stat::after{
+  content:'';position:absolute;right:-28px;top:-32px;width:96px;height:96px;border-radius:50%;
+  background:radial-gradient(circle,rgba(125,255,179,.13),transparent 70%);
+}
+.stat .k{display:flex;align-items:center;gap:7px;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--dim);font-weight:700}
+.stat .k .ico{width:14px;height:14px;color:var(--mint)}
+.stat .v{font-size:26px;font-weight:700;letter-spacing:-.03em;margin:9px 0 2px;font-variant-numeric:tabular-nums}
+.stat .s{font-size:11px;color:var(--muted)}
+.stat.violet .k .ico{color:var(--violet)}
+.stat.violet::after{background:radial-gradient(circle,rgba(177,140,255,.14),transparent 70%)}
+.stat.amber .k .ico{color:var(--amber)}
+.stat.amber::after{background:radial-gradient(circle,rgba(255,209,102,.12),transparent 70%)}
+.stat.blue .k .ico{color:var(--blue)}
+.stat.blue::after{background:radial-gradient(circle,rgba(111,184,255,.12),transparent 70%)}
+
+.dash-cols{display:grid;grid-template-columns:1.5fr 1fr;gap:14px;margin-bottom:14px}
+.dash-list{display:flex;flex-direction:column;gap:2px}
+.dash-row{display:flex;align-items:center;gap:11px;padding:10px 8px;border-radius:11px;transition:background .15s}
+.dash-row:hover{background:rgba(255,255,255,.035)}
+.dash-row .av{width:32px;height:32px;border-radius:10px;flex:0 0 auto;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;background:#1a221d;color:#9fe9bd;overflow:hidden}
+.dash-row .av img{width:100%;height:100%;object-fit:cover}
+.dash-row .t{flex:1;min-width:0;line-height:1.25}
+.dash-row .t b{display:block;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dash-row .t small{display:block;font-size:10.5px;color:var(--dim)}
+.dash-row .when{font-size:10.5px;color:var(--dim);white-space:nowrap}
+
+/* ============ TABLE ============ */
+.table-wrap{overflow-x:auto;border-radius:var(--r-lg);border:1px solid var(--line);background:rgba(11,14,12,.7)}
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+thead th{
+  text-align:left;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);
+  font-weight:700;padding:12px 14px;border-bottom:1px solid var(--line);white-space:nowrap;background:rgba(255,255,255,.015);
+}
+tbody td{padding:11px 14px;border-bottom:1px solid rgba(255,255,255,.045);vertical-align:middle}
+tbody tr:last-child td{border-bottom:none}
+tbody tr{transition:background .13s}
+tbody tr:hover{background:rgba(255,255,255,.028)}
+.cell-user{display:flex;align-items:center;gap:9px;min-width:0}
+.cell-user .av{width:30px;height:30px;border-radius:9px;flex:0 0 auto;display:flex;align-items:center;justify-content:center;font-size:11.5px;font-weight:700;background:#1a221d;color:#9fe9bd;overflow:hidden}
+.cell-user .av img{width:100%;height:100%;object-fit:cover}
+.cell-user .n{min-width:0;line-height:1.2}
+.cell-user .n b{display:block;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:190px}
+.cell-user .n small{display:block;font-size:10.5px;color:var(--dim)}
+.row-actions{display:flex;gap:5px;justify-content:flex-end}
+.empty{
+  display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;
+  padding:44px 20px;color:var(--dim);
+}
+.empty .ico{width:30px;height:30px;color:#3e4a42;margin-bottom:4px}
+.empty b{font-size:13px;color:var(--muted)}
+.empty small{font-size:11.5px;max-width:280px;line-height:1.5}
+
+/* chips */
+.chip{
+  display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:8px;
+  font-size:10.5px;font-weight:700;white-space:nowrap;border:1px solid transparent;line-height:1.35;
+}
+.chip .ico{width:11px;height:11px}
+.chip.ok{background:rgba(125,255,179,.12);color:#9dffc4;border-color:rgba(125,255,179,.2)}
+.chip.warn{background:rgba(255,209,102,.12);color:#ffdf94;border-color:rgba(255,209,102,.22)}
+.chip.danger{background:rgba(255,107,107,.12);color:#ffa3a3;border-color:rgba(255,107,107,.22)}
+.chip.info{background:rgba(111,184,255,.12);color:#a8d6ff;border-color:rgba(111,184,255,.22)}
+.chip.violet{background:rgba(177,140,255,.12);color:#d9c4ff;border-color:rgba(177,140,255,.22)}
+.chip.mute{background:rgba(255,255,255,.06);color:var(--muted);border-color:var(--line)}
+.chip-row{display:flex;flex-wrap:wrap;gap:4px}
+
+/* ============ USERS ============ */
+.user-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(268px,1fr));gap:11px}
+.user-card{
+  position:relative;display:flex;flex-direction:column;gap:11px;padding:15px;
+  border-radius:18px;border:1px solid var(--line);
+  background:linear-gradient(165deg,rgba(18,23,20,.9),rgba(11,14,12,.94));
+  transition:border-color .15s,transform .15s;
+}
+.user-card:hover{border-color:rgba(125,255,179,.22);transform:translateY(-1px)}
+.user-card .top{display:flex;align-items:center;gap:11px;min-width:0}
+.user-card .av{width:44px;height:44px;border-radius:14px;flex:0 0 auto;overflow:hidden;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;background:linear-gradient(145deg,#2b3a31,#18211d);color:#a8ffcc;border:1px solid var(--line-2)}
+.user-card .av img{width:100%;height:100%;object-fit:cover}
+.user-card .who{min-width:0;flex:1;line-height:1.25}
+.user-card .who b{display:block;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.user-card .who small{display:block;font-size:11px;color:var(--dim);margin-top:2px}
+.user-card .stats{display:flex;gap:6px;flex-wrap:wrap}
+.user-card .foot{display:flex;flex-wrap:wrap;align-items:center;gap:6px;border-top:1px solid rgba(255,255,255,.05);padding-top:10px}
+.user-card .foot .btn{flex:1 1 calc(50% - 3px);min-width:0;padding:7px 9px;font-size:11px}
+.user-card .foot .btn-icon{flex:0 0 34px;padding:7px}
+.dot-online{width:7px;height:7px;border-radius:50%;background:var(--mint);box-shadow:0 0 0 3px rgba(125,255,179,.14);display:inline-block}
+
+/* ============ CHAT ROWS ============ */
+.chat-list{display:flex;flex-direction:column;gap:8px}
+.chat-row{
+  display:flex;align-items:center;gap:12px;padding:13px 15px;border-radius:16px;
+  border:1px solid var(--line);background:rgba(15,19,16,.75);
+}
+.chat-row:hover{border-color:rgba(255,255,255,.14)}
+.chat-row .av{width:42px;height:42px;border-radius:13px;flex:0 0 auto;overflow:hidden;display:flex;align-items:center;justify-content:center;font-weight:700;background:linear-gradient(145deg,#243329,#18211d);color:#a8ffcc;font-size:15px}
+.chat-row .av img{width:100%;height:100%;object-fit:cover}
+.chat-row .info{flex:1;min-width:0;line-height:1.25}
+.chat-row .info .line1{display:flex;align-items:center;gap:6px}
+.chat-row .info b{font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chat-row .info small{display:block;font-size:11px;color:var(--dim);margin-top:2px}
+.chat-row .side{display:flex;align-items:center;gap:6px;flex:0 0 auto}
+.badge-ico{width:15px;height:15px}
+.badge-ico.verified{color:#4da3ff}
+.badge-ico.premium{color:#ffd60a}
+.badge-ico.crown{color:#ffb340}
+
+/* ============ GIFTS ============ */
+.gift-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px}
+.gift-card{
+  display:flex;flex-direction:column;gap:10px;padding:15px;border-radius:18px;
+  border:1px solid var(--line);background:linear-gradient(165deg,rgba(18,23,20,.9),rgba(11,14,12,.94));
+}
+.gift-card .preview{
+  height:112px;border-radius:14px;display:flex;align-items:center;justify-content:center;
+  background:radial-gradient(120% 120% at 30% 0%,rgba(125,255,179,.1),transparent 65%),rgba(255,255,255,.025);
+  border:1px solid rgba(255,255,255,.06);overflow:hidden;position:relative;
+}
+.gift-card .preview img,.gift-card .preview video{max-width:100%;max-height:100%;object-fit:contain}
+.gift-card .preview .emoji{font-size:46px;line-height:1}
+.gift-card .preview .lottie{width:96px;height:96px}
+.gift-card .name{font-size:13.5px;font-weight:700;display:flex;align-items:center;gap:7px}
+.gift-card .meta{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.gift-card .desc{font-size:11px;color:var(--dim);line-height:1.45;min-height:32px}
+.gift-card .foot{display:flex;gap:6px;border-top:1px solid rgba(255,255,255,.05);padding-top:10px}
+.gift-card .foot .btn{flex:1}
+.rarity-common{color:var(--muted)}
+.rarity-rare{color:#6fb8ff}
+.rarity-epic{color:#c58cff}
+.rarity-legendary{color:#ffd166}
+
+/* ============ BADGES / STORIES ============ */
+.story-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:11px}
+.story-card{position:relative;border-radius:16px;overflow:hidden;border:1px solid var(--line);background:#0d100e;aspect-ratio:9/14}
+.story-card img,.story-card video{width:100%;height:100%;object-fit:cover;display:block}
+.story-card .ov{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:space-between;padding:10px;background:linear-gradient(180deg,rgba(0,0,0,.5),transparent 38%,transparent 62%,rgba(0,0,0,.72))}
+.story-card .top{display:flex;align-items:center;gap:6px;font-size:10.5px}
+.story-card .top .av{width:24px;height:24px;border-radius:8px;overflow:hidden;display:flex;align-items:center;justify-content:center;background:#1a221d;color:#9fe9bd;font-size:10px;font-weight:700}
+.story-card .top .av img{width:100%;height:100%;object-fit:cover}
+.story-card .top b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:88px}
+.story-card .bot{display:flex;align-items:center;justify-content:space-between;gap:6px;font-size:10px;color:rgba(255,255,255,.8)}
+.story-card .cap{position:absolute;left:10px;right:10px;bottom:32px;font-size:11px;line-height:1.35;color:#fff;text-shadow:0 1px 6px rgba(0,0,0,.8);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.story-card .del{position:absolute;top:8px;right:8px;z-index:3;width:28px;height:28px;border-radius:9px;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.5);border:1px solid rgba(255,255,255,.16);color:#fff;backdrop-filter:blur(6px)}
+.story-card .del:hover{background:rgba(255,107,107,.4)}
+
+/* ============ GIVEAWAYS ============ */
+.gw-list{display:flex;flex-direction:column;gap:9px}
+.gw-row{
+  display:flex;align-items:center;gap:13px;padding:14px 16px;border-radius:16px;
+  border:1px solid var(--line);background:rgba(15,19,16,.75);
+}
+.gw-row.active{border-color:rgba(177,140,255,.28);background:linear-gradient(100deg,rgba(177,140,255,.07),rgba(15,19,16,.8))}
+.gw-row .icon{
+  width:42px;height:42px;border-radius:13px;flex:0 0 auto;display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(145deg,rgba(177,140,255,.24),rgba(111,184,255,.16));color:#d9c4ff;border:1px solid rgba(177,140,255,.24);
+}
+.gw-row .info{flex:1;min-width:0;line-height:1.3}
+.gw-row .info b{font-size:13.5px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gw-row .info small{font-size:11px;color:var(--dim);display:block;margin-top:2px}
+.gw-row .info .timer{font-size:10.5px;color:var(--amber);font-weight:700;margin-top:3px;display:inline-flex;align-items:center;gap:4px}
+.gw-row .info .timer .ico{width:11px;height:11px}
+.gw-row .side{display:flex;align-items:center;gap:5px;flex:0 0 auto;flex-wrap:wrap;justify-content:flex-end}
+
+/* ============ MODAL ============ */
+.modal-backdrop{
+  position:fixed;inset:0;z-index:150;display:flex;align-items:center;justify-content:center;
+  padding:20px;background:rgba(3,5,4,.74);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  animation:fadeIn .16s ease both;
+}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.modal{
+  width:520px;max-width:100%;max-height:calc(100dvh - 40px);overflow-y:auto;
+  background:linear-gradient(180deg,#121713,#0a0d0b);
+  border:1px solid var(--line-2);border-radius:24px;
+  box-shadow:0 40px 120px rgba(0,0,0,.8);animation:modalIn .22s cubic-bezier(.2,.9,.3,1.05) both;
+}
+.modal.wide{width:720px}
+@keyframes modalIn{from{opacity:0;transform:translateY(14px) scale(.98)}to{opacity:1;transform:none}}
+.modal-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:20px 22px 14px;border-bottom:1px solid var(--line)}
+.modal-head h3{font-size:16px;font-weight:700;letter-spacing:-.01em}
+.modal-head p{font-size:11.5px;color:var(--dim);margin-top:3px;line-height:1.4}
+.modal-body{padding:18px 22px;display:flex;flex-direction:column;gap:13px}
+.modal-foot{display:flex;justify-content:flex-end;gap:8px;padding:14px 22px 20px;border-top:1px solid var(--line)}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.form-grid .full{grid-column:1/-1}
+.switch-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 13px;border-radius:12px;background:rgba(255,255,255,.03);border:1px solid var(--line)}
+.switch-row .lab{line-height:1.3}
+.switch-row .lab b{display:block;font-size:12.5px}
+.switch-row .lab small{display:block;font-size:10.5px;color:var(--dim);margin-top:2px}
+.switch{position:relative;width:42px;height:24px;flex:0 0 auto}
+.switch input{position:absolute;opacity:0;width:100%;height:100%;margin:0;cursor:pointer;z-index:2}
+.switch .track{position:absolute;inset:0;border-radius:12px;background:#232b26;border:1px solid var(--line-2);transition:.18s}
+.switch .track::after{content:'';position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:#8b978f;transition:.18s}
+.switch input:checked + .track{background:rgba(125,255,179,.24);border-color:var(--mint-line)}
+.switch input:checked + .track::after{left:20px;background:var(--mint)}
+.upload-drop{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;
+  padding:20px 14px;border-radius:14px;border:1.5px dashed rgba(255,255,255,.16);
+  background:rgba(255,255,255,.02);color:var(--muted);cursor:pointer;text-align:center;
+}
+.upload-drop:hover{border-color:var(--mint-line);background:rgba(125,255,179,.04)}
+.upload-drop .ico{width:22px;height:22px;color:var(--mint);margin-bottom:2px}
+.upload-drop b{font-size:12.5px;color:var(--text)}
+.upload-drop small{font-size:10.5px;color:var(--dim)}
+.preview-box{height:140px;border-radius:14px;border:1px solid var(--line);background:rgba(255,255,255,.02);display:flex;align-items:center;justify-content:center;overflow:hidden}
+.preview-box img,.preview-box video{max-width:100%;max-height:100%;object-fit:contain}
+.preview-box .lottie{width:110px;height:110px}
+
+/* ============ TOAST ============ */
+#toast-host{position:fixed;right:20px;bottom:20px;z-index:400;display:flex;flex-direction:column;gap:8px;pointer-events:none}
+.toast{
+  display:flex;align-items:center;gap:9px;padding:11px 14px;border-radius:13px;
+  background:rgba(18,24,20,.97);border:1px solid var(--line-2);color:var(--text);
+  font-size:12.5px;box-shadow:0 18px 50px rgba(0,0,0,.5);max-width:340px;
+  animation:toastIn .22s cubic-bezier(.2,.9,.3,1.05) both;
+}
+.toast .ico{width:16px;height:16px;flex:0 0 auto}
+.toast.ok .ico{color:var(--mint)}
+.toast.err .ico{color:var(--danger)}
+.toast.info .ico{color:var(--blue)}
+.toast.out{animation:toastOut .18s ease both}
+@keyframes toastIn{from{opacity:0;transform:translateY(10px) scale(.97)}to{opacity:1;transform:none}}
+@keyframes toastOut{to{opacity:0;transform:translateY(6px) scale(.98)}}
+
+/* ============ RESPONSIVE ============ */
+.mobile-menu-btn{display:none}
+@media (max-width:1120px){
+  .stat-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .dash-cols{grid-template-columns:1fr}
+}
+@media (max-width:860px){
+  .sidebar{
+    position:fixed;left:0;top:0;bottom:0;z-index:120;transform:translateX(-104%);
+    transition:transform .24s cubic-bezier(.2,.8,.25,1);box-shadow:0 0 80px rgba(0,0,0,.6);
+  }
+  body.nav-open .sidebar{transform:none}
+  body.nav-open::after{content:'';position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:110}
+  .mobile-menu-btn{display:inline-flex}
+  .topbar{padding:13px 16px;gap:10px}
+  .content{padding:18px 16px 60px}
+  .topbar-search{width:auto;flex:1;max-width:none}
+  .topbar-title small{display:none}
+}
+@media (max-width:560px){
+  .stat-grid{grid-template-columns:1fr 1fr;gap:9px}
+  .stat .v{font-size:22px}
+  .topbar-search{display:none}
+  .form-grid{grid-template-columns:1fr}
+  .user-grid{grid-template-columns:1fr}
+  .gift-grid{grid-template-columns:repeat(auto-fill,minmax(160px,1fr))}
+  .story-grid{grid-template-columns:repeat(2,1fr)}
+  .gw-row{flex-wrap:wrap}
+  .gw-row .side{width:100%;justify-content:flex-start}
+  .modal-backdrop{padding:10px;align-items:flex-end}
+  .modal{max-height:92dvh;border-radius:22px}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important;scroll-behavior:auto!important}
+}
+</style>
+</head>
+<body>
+
+<svg class="sprite" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+  <symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.6"/><rect x="14" y="3" width="7" height="7" rx="1.6"/><rect x="3" y="14" width="7" height="7" rx="1.6"/><rect x="14" y="14" width="7" height="7" rx="1.6"/></symbol>
+  <symbol id="i-users" viewBox="0 0 24 24"><path d="M16 20v-1.8a3.6 3.6 0 0 0-3.6-3.6H6.6A3.6 3.6 0 0 0 3 18.2V20"/><circle cx="9.5" cy="7.5" r="3.5"/><path d="M21 20v-1.8a3.6 3.6 0 0 0-2.7-3.5"/><path d="M15.5 4.2a3.5 3.5 0 0 1 0 6.6"/></symbol>
+  <symbol id="i-chat" viewBox="0 0 24 24"><path d="M21 14.5a2.5 2.5 0 0 1-2.5 2.5H8l-4 3.5V5.5A2.5 2.5 0 0 1 6.5 3h12A2.5 2.5 0 0 1 21 5.5z"/></symbol>
+  <symbol id="i-messages" viewBox="0 0 24 24"><path d="M20 11.5a7.5 7.5 0 0 1-10.9 6.7L4 20l1.8-5.1A7.5 7.5 0 1 1 20 11.5z"/></symbol>
+  <symbol id="i-gift" viewBox="0 0 24 24"><rect x="3" y="8" width="18" height="4.5" rx="1.2"/><path d="M5 12.5V20a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-7.5"/><path d="M12 8v13"/><path d="M12 8S10.6 3.5 8 3.5a2.2 2.2 0 0 0 0 4.5z"/><path d="M12 8s1.4-4.5 4-4.5a2.2 2.2 0 0 1 0 4.5z"/></symbol>
+  <symbol id="i-award" viewBox="0 0 24 24"><circle cx="12" cy="9" r="5.5"/><path d="M8.2 13.6 7 21l5-2.4 5 2.4-1.2-7.4"/></symbol>
+  <symbol id="i-party" viewBox="0 0 24 24"><path d="M3 21l5.2-13.2 8 8z"/><path d="M14 4v2"/><path d="M19 8h2"/><path d="M16.5 5.5 18 4"/><path d="M20 13.5 21.5 15"/><path d="M14.5 10.5 16 12"/></symbol>
+  <symbol id="i-play" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M10 8.5l6 3.5-6 3.5z"/></symbol>
+  <symbol id="i-megaphone" viewBox="0 0 24 24"><path d="M3 11v2a2 2 0 0 0 2 2h2l4 4V5L7 9H5a2 2 0 0 0-2 2z"/><path d="M16 8.5a5 5 0 0 1 0 7"/><path d="M19 5.5a9 9 0 0 1 0 13"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3l7.5 3v5.4c0 4.7-3.2 8.2-7.5 9.6-4.3-1.4-7.5-4.9-7.5-9.6V6z"/><path d="M9 12l2 2 4-4"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></symbol>
+  <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 11a8 8 0 0 0-14.3-4.6L3 9"/><path d="M3 4v5h5"/><path d="M4 13a8 8 0 0 0 14.3 4.6L21 15"/><path d="M21 20v-5h-5"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-edit" viewBox="0 0 24 24"><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4z"/><path d="M14 6l3 3"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16"/><path d="M9 7V4.5h6V7"/><path d="M6 7l1 13h10l1-13"/><path d="M10 11v5M14 11v5"/></symbol>
+  <symbol id="i-ban" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M5.6 5.6l12.8 12.8"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M4.5 12.5l5 5 10-11"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+  <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 16V4"/><path d="M7.5 8.5 12 4l4.5 4.5"/><path d="M4 16v2.5A1.5 1.5 0 0 0 5.5 20h13a1.5 1.5 0 0 0 1.5-1.5V16"/></symbol>
+  <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3"/></symbol>
+  <symbol id="i-timer" viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2"/><path d="M9 2h6"/></symbol>
+  <symbol id="i-crown" viewBox="0 0 24 24"><path d="M3 8l4 3 5-6 5 6 4-3-2 10H5z"/><path d="M5 18h14"/></symbol>
+  <symbol id="i-star" viewBox="0 0 24 24"><path d="M12 3.5l2.6 5.3 5.9.8-4.3 4.1 1.1 5.8-5.3-2.9-5.3 2.9 1.1-5.8L3.5 9.6l5.9-.8z"/></symbol>
+  <symbol id="i-badge-check" viewBox="0 0 24 24"><path d="M12 2.8l2.1 1.6 2.6-.2 1 2.4 2.2 1.5-.6 2.5.9 2.4-2 1.7-.5 2.6-2.6.4-1.7 2-2.4-.9-2.4.9-1.7-2-2.6-.4-.5-2.6-2-1.7.9-2.4-.6-2.5L4.3 6.6l1-2.4 2.6.2z"/><path d="M8.8 12l2.2 2.2 4.2-4.4"/></symbol>
+  <symbol id="i-flag" viewBox="0 0 24 24"><path d="M5 21V4"/><path d="M5 4h11l-1.5 4L16 12H5"/></symbol>
+  <symbol id="i-wallet" viewBox="0 0 24 24"><path d="M20 8V6.5A1.5 1.5 0 0 0 18.5 5h-13A1.5 1.5 0 0 0 4 6.5v11A1.5 1.5 0 0 0 5.5 19h13a1.5 1.5 0 0 0 1.5-1.5V16"/><path d="M21 10h-4.5a2 2 0 0 0 0 4H21z"/></symbol>
+  <symbol id="i-logout" viewBox="0 0 24 24"><path d="M14 4h4.5A1.5 1.5 0 0 1 20 5.5v13a1.5 1.5 0 0 1-1.5 1.5H14"/><path d="M10 8l-4 4 4 4"/><path d="M6 12h9"/></symbol>
+  <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></symbol>
+  <symbol id="i-external" viewBox="0 0 24 24"><path d="M14 4h6v6"/><path d="M20 4l-8.5 8.5"/><path d="M19 14v5.5A1.5 1.5 0 0 1 17.5 21h-12A1.5 1.5 0 0 1 4 19.5v-12A1.5 1.5 0 0 1 5.5 6H11"/></symbol>
+  <symbol id="i-image" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2.5"/><circle cx="8.5" cy="9.5" r="1.6"/><path d="M4 17l5-5 4 4 2.5-2.5L20 17"/></symbol>
+  <symbol id="i-send" viewBox="0 0 24 24"><path d="M21 3L10.5 13.5"/><path d="M21 3l-6.5 18-4-7.5L3 9.5z"/></symbol>
+  <symbol id="i-sparkles" viewBox="0 0 24 24"><path d="M12 3l1.6 4.4L18 9l-4.4 1.6L12 15l-1.6-4.4L6 9l4.4-1.6z"/><path d="M18.5 14l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8z"/><path d="M5 15l.6 1.7 1.7.6-1.7.6L5 19.6l-.6-1.7-1.7-.6 1.7-.6z"/></symbol>
+  <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4.5 20.5a7.5 7.5 0 0 1 15 0"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 3.5 21 20H3z"/><path d="M12 9v5"/><path d="M12 17h.01"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24"><rect x="4.5" y="10" width="15" height="10.5" rx="2.2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/><path d="M12 14.5v2"/></symbol>
+  <symbol id="i-settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M19.5 12a7.5 7.5 0 0 0-.1-1.2l2-1.5-2-3.4-2.3 1a7.5 7.5 0 0 0-2-1.2L14.7 3h-4l-.4 2.7a7.5 7.5 0 0 0-2 1.2l-2.3-1-2 3.4 2 1.5a7.5 7.5 0 0 0 0 2.4l-2 1.5 2 3.4 2.3-1a7.5 7.5 0 0 0 2 1.2l.4 2.7h4l.4-2.7a7.5 7.5 0 0 0 2-1.2l2.3 1 2-3.4-2-1.5c.1-.4.1-.8.1-1.2z"/></symbol>
+  <symbol id="i-chevron-left" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></symbol>
+  <symbol id="i-chevron-right" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></symbol>
+  <symbol id="i-link" viewBox="0 0 24 24"><path d="M10 13.5a4 4 0 0 0 5.7 0l2.8-2.8a4 4 0 0 0-5.7-5.7L11.5 6.3"/><path d="M14 10.5a4 4 0 0 0-5.7 0l-2.8 2.8a4 4 0 0 0 5.7 5.7l1.3-1.3"/></symbol>
+  <symbol id="i-database" viewBox="0 0 24 24"><ellipse cx="12" cy="5.5" rx="8" ry="3"/><path d="M4 5.5v13c0 1.7 3.6 3 8 3s8-1.3 8-3v-13"/><path d="M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></symbol>
+  <symbol id="i-activity" viewBox="0 0 24 24"><path d="M3 12h4l2.5-7 5 14L17 12h4"/></symbol>
+  <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a14 14 0 0 1 0 18a14 14 0 0 1 0-18z"/></symbol>
+</svg>
+
+<!-- ==================== LOGIN ==================== -->
+<div id="login-screen" style="display:none">
+  <form class="login-card" id="login-form" autocomplete="on">
+    <div class="login-logo"><svg class="ico"><use href="#i-shield"/></svg></div>
+    <h1>Runa Control</h1>
+    <p class="sub">Панель управления мессенджером Runa.<br>Доступ только для администраторов.</p>
+    <div class="field">
+      <label for="login-user">Логин</label>
+      <input class="input" id="login-user" name="username" autocomplete="username" placeholder="admin" required>
+    </div>
+    <div class="field">
+      <label for="login-pass">Пароль</label>
+      <input class="input" id="login-pass" name="password" type="password" autocomplete="current-password" placeholder="••••••••" required>
+    </div>
+    <button class="btn btn-primary btn-block" id="login-submit" type="submit" style="margin-top:6px;padding:11px">
+      <svg class="ico sm"><use href="#i-lock"/></svg> Войти в панель
+    </button>
+    <p class="hint" id="login-error" style="color:#ff9b9b;text-align:center;margin-top:12px;display:none"></p>
+  </form>
+</div>
+
+<!-- ==================== APP ==================== -->
+<div id="app-shell" hidden>
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark"><svg class="ico"><use href="#i-shield"/></svg></div>
+      <div class="brand-text"><b>Runa Control</b><small>Admin suite</small></div>
+    </div>
+
+    <div class="nav-label">Обзор</div>
+    <nav class="nav" id="nav-main">
+      <button class="nav-item active" data-view="dashboard"><svg class="ico"><use href="#i-grid"/></svg><span>Дашборд</span></button>
+      <button class="nav-item" data-view="users"><svg class="ico"><use href="#i-users"/></svg><span>Пользователи</span><em class="count" id="nav-count-users">0</em></button>
+      <button class="nav-item" data-view="chats"><svg class="ico"><use href="#i-chat"/></svg><span>Чаты и каналы</span><em class="count" id="nav-count-chats">0</em></button>
+      <button class="nav-item" data-view="messages"><svg class="ico"><use href="#i-messages"/></svg><span>Сообщения</span></button>
+    </nav>
+
+    <div class="nav-label">Контент</div>
+    <nav class="nav">
+      <button class="nav-item" data-view="gifts"><svg class="ico"><use href="#i-gift"/></svg><span>Подарки</span><em class="count" id="nav-count-gifts">0</em></button>
+      <button class="nav-item" data-view="badges"><svg class="ico"><use href="#i-award"/></svg><span>Значки</span></button>
+      <button class="nav-item" data-view="giveaways"><svg class="ico"><use href="#i-party"/></svg><span>Розыгрыши</span><em class="count" id="nav-count-giveaways">0</em></button>
+      <button class="nav-item" data-view="stories"><svg class="ico"><use href="#i-play"/></svg><span>Истории</span><em class="count" id="nav-count-stories">0</em></button>
+      <button class="nav-item" data-view="broadcast"><svg class="ico"><use href="#i-megaphone"/></svg><span>Рассылка</span></button>
+      <button class="nav-item" data-view="clans"><svg class="ico"><use href="#i-shield"/></svg><span>Кланы</span></button>
+    </nav>
+
+    <div class="sidebar-foot">
+      <div class="side-user">
+        <div class="av" id="side-avatar">A</div>
+        <div class="meta"><b id="side-name">Администратор</b><small id="side-username">@admin</small></div>
+      </div>
+      <div class="side-actions">
+        <a class="btn btn-ghost" href="/" target="_blank" rel="noopener"><svg class="ico sm"><use href="#i-external"/></svg> Открыть Runa</a>
+        <button class="btn btn-ghost" id="logout-btn" title="Выйти"><svg class="ico sm"><use href="#i-logout"/></svg></button>
+      </div>
+    </div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <button class="icon-btn mobile-menu-btn" id="mobile-menu-btn" title="Меню"><svg class="ico"><use href="#i-menu"/></svg></button>
+      <div class="topbar-title">
+        <h1 id="view-title">Дашборд</h1>
+        <small id="view-subtitle">Обзор состояния Runa</small>
+      </div>
+      <div class="topbar-spacer"></div>
+      <div class="topbar-search">
+        <svg class="ico"><use href="#i-search"/></svg>
+        <input id="global-search" type="search" placeholder="Поиск по разделу…" autocomplete="off">
+      </div>
+      <div class="topbar-actions">
+        <button class="icon-btn" id="refresh-btn" title="Обновить данные"><svg class="ico"><use href="#i-refresh"/></svg></button>
+      </div>
+    </header>
+
+    <div class="content" id="content">
+
+      <!-- ============ DASHBOARD ============ -->
+      <section class="view active" data-view-panel="dashboard">
+        <div class="stat-grid">
+          <div class="stat">
+            <div class="k"><svg class="ico"><use href="#i-users"/></svg> Пользователи</div>
+            <div class="v" id="st-users">—</div>
+            <div class="s"><span id="st-online">0</span> онлайн · <span id="st-today">0</span> новых сегодня</div>
+          </div>
+          <div class="stat violet">
+            <div class="k"><svg class="ico"><use href="#i-chat"/></svg> Чаты и каналы</div>
+            <div class="v" id="st-rooms">—</div>
+            <div class="s"><span id="st-verified">0</span> со значком</div>
+          </div>
+          <div class="stat blue">
+            <div class="k"><svg class="ico"><use href="#i-messages"/></svg> Сообщения</div>
+            <div class="v" id="st-messages">—</div>
+            <div class="s">всего в системе</div>
+          </div>
+          <div class="stat amber">
+            <div class="k"><svg class="ico"><use href="#i-party"/></svg> Активности</div>
+            <div class="v" id="st-active">—</div>
+            <div class="s"><span id="st-giveaways">0</span> розыгрышей · <span id="st-stories">0</span> историй</div>
+          </div>
+        </div>
+
+        <div class="dash-cols">
+          <div class="card">
+            <div class="card-title">Последние пользователи</div>
+            <div class="dash-list" id="dash-users"><div class="empty"><b>Загрузка…</b></div></div>
+          </div>
+          <div class="card">
+            <div class="card-title">Состояние системы</div>
+            <div class="dash-list" id="dash-system"></div>
+          </div>
+        </div>
+
+        <div class="dash-cols">
+          <div class="card">
+            <div class="card-title">Последние сообщения</div>
+            <div class="dash-list" id="dash-messages"><div class="empty"><b>Загрузка…</b></div></div>
+          </div>
+          <div class="card">
+            <div class="card-title">Быстрые действия</div>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <button class="btn btn-primary" data-quick="new-chat"><svg class="ico sm"><use href="#i-plus"/></svg> Создать канал</button>
+              <button class="btn" data-quick="new-gift"><svg class="ico sm"><use href="#i-gift"/></svg> Добавить подарок</button>
+              <button class="btn" data-quick="new-giveaway"><svg class="ico sm"><use href="#i-party"/></svg> Запустить розыгрыш</button>
+              <button class="btn" data-quick="broadcast"><svg class="ico sm"><use href="#i-megaphone"/></svg> Сделать рассылку</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+
+      <!-- ============ USERS ============ -->
+      <section class="view" data-view-panel="users">
+        <div class="section-head">
+          <div>
+            <h2>Пользователи</h2>
+            <p>Управление аккаунтами, балансом, значками и доступом.</p>
+          </div>
+          <div class="toolbar" style="margin:0">
+            <button class="btn btn-ghost" id="users-refresh"><svg class="ico sm"><use href="#i-refresh"/></svg> Обновить</button>
+          </div>
+        </div>
+        <div class="toolbar">
+          <div class="topbar-search" style="width:280px;max-width:100%">
+            <svg class="ico"><use href="#i-search"/></svg>
+            <input id="users-search" type="search" placeholder="Имя или @username…" autocomplete="off">
+          </div>
+          <div class="grow"></div>
+          <span class="chip mute" id="users-total">0 пользователей</span>
+        </div>
+        <div class="user-grid" id="users-grid"></div>
+      </section>
+
+      <!-- ============ CHATS ============ -->
+      <section class="view" data-view-panel="chats">
+        <div class="section-head">
+          <div>
+            <h2>Чаты и каналы</h2>
+            <p>Значки подтверждения выдаются только здесь. Публичный список очищен от старых отметок.</p>
+          </div>
+          <div class="toolbar" style="margin:0">
+            <button class="btn btn-primary" id="chat-create-btn"><svg class="ico sm"><use href="#i-plus"/></svg> Новый канал</button>
+          </div>
+        </div>
+        <div class="toolbar">
+          <div class="topbar-search" style="width:280px;max-width:100%">
+            <svg class="ico"><use href="#i-search"/></svg>
+            <input id="chats-search" type="search" placeholder="Название или @username…" autocomplete="off">
+          </div>
+          <div class="grow"></div>
+          <div class="chip-row">
+            <button class="chip mute" data-chat-filter="all">Все</button>
+            <button class="chip mute" data-chat-filter="channel">Каналы</button>
+            <button class="chip mute" data-chat-filter="group">Группы</button>
+            <button class="chip mute" data-chat-filter="badge">Со значком</button>
+          </div>
+        </div>
+        <div class="chat-list" id="chats-list"></div>
+      </section>
+
+      <!-- ============ MESSAGES ============ -->
+      <section class="view" data-view-panel="messages">
+        <div class="section-head">
+          <div>
+            <h2>Сообщения</h2>
+            <p>Поиск и удаление сообщений во всех чатах.</p>
+          </div>
+        </div>
+        <div class="toolbar">
+          <div class="topbar-search" style="width:320px;max-width:100%">
+            <svg class="ico"><use href="#i-search"/></svg>
+            <input id="messages-search" type="search" placeholder="Текст сообщения…" autocomplete="off">
+          </div>
+          <select class="select" id="messages-chat-filter" style="width:230px">
+            <option value="">Все чаты</option>
+          </select>
+          <div class="grow"></div>
+          <span class="chip mute" id="messages-total">0</span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Автор</th><th>Чат</th><th>Сообщение</th><th>Дата</th><th style="text-align:right">Действия</th></tr></thead>
+            <tbody id="messages-body"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ============ GIFTS ============ -->
+      <section class="view" data-view-panel="gifts">
+        <div class="section-head">
+          <div>
+            <h2>Подарки</h2>
+            <p>Каталог маркета. Анимация <span class="mono">gift-001.tgs</span> остаётся доступной для публикации.</p>
+          </div>
+          <div class="toolbar" style="margin:0">
+            <button class="btn btn-primary" id="gift-create-btn"><svg class="ico sm"><use href="#i-plus"/></svg> Новый подарок</button>
+          </div>
+        </div>
+        <div class="gift-grid" id="gifts-grid"></div>
+      </section>
+
+      <!-- ============ BADGES ============ -->
+      <section class="view" data-view-panel="badges">
+        <div class="section-head">
+          <div>
+            <h2>Значки пользователей</h2>
+            <p>Персональные отметки в профиле. Значки каналов выдаются в разделе «Чаты и каналы».</p>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Пользователь</th><th>Значок</th><th>Подпись</th><th>Дата</th><th style="text-align:right">Действия</th></tr></thead>
+            <tbody id="badges-body"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ============ GIVEAWAYS ============ -->
+      <section class="view" data-view-panel="giveaways">
+        <div class="section-head">
+          <div>
+            <h2>Розыгрыши</h2>
+            <p>Telegram-подобные розыгрыши внутри каналов: призы, участники, автозавершение.</p>
+          </div>
+          <div class="toolbar" style="margin:0">
+            <button class="btn btn-primary" id="giveaway-create-btn"><svg class="ico sm"><use href="#i-plus"/></svg> Новый розыгрыш</button>
+          </div>
+        </div>
+        <div class="gw-list" id="giveaways-list"></div>
+      </section>
+
+      <!-- ============ STORIES ============ -->
+      <section class="view" data-view-panel="stories">
+        <div class="section-head">
+          <div>
+            <h2>Истории</h2>
+            <p>Публичные истории живут 24 часа. Здесь можно удалить любую историю.</p>
+          </div>
+          <div class="toolbar" style="margin:0">
+            <button class="btn btn-ghost" id="stories-refresh"><svg class="ico sm"><use href="#i-refresh"/></svg> Обновить</button>
+          </div>
+        </div>
+        <div class="story-grid" id="stories-grid"></div>
+      </section>
+
+      <!-- ============ BROADCAST ============ -->
+      <section class="view" data-view-panel="broadcast">
+        <div class="section-head">
+          <div>
+            <h2>Рассылка</h2>
+            <p>Сообщение будет отправлено во все группы и каналы от имени администратора.</p>
+          </div>
+        </div>
+        <div class="dash-cols" style="grid-template-columns:1.4fr 1fr">
+          <div class="card">
+            <div class="card-title">Текст рассылки</div>
+            <textarea class="input" id="broadcast-text" maxlength="2000" placeholder="Здравствуйте! В Runa появились истории и розыгрыши…" style="min-height:180px"></textarea>
+            <div class="toolbar" style="margin:14px 0 0">
+              <span class="hint"><span id="broadcast-count">0</span> / 2000 символов</span>
+              <div class="grow"></div>
+              <button class="btn btn-primary" id="broadcast-send"><svg class="ico sm"><use href="#i-send"/></svg> Отправить во все чаты</button>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title">Предпросмотр</div>
+            <div id="broadcast-preview" style="border-radius:16px;background:rgba(255,255,255,.035);border:1px solid var(--line);padding:14px;min-height:120px">
+              <p class="hint">Сообщение появится здесь по мере ввода.</p>
+            </div>
+            <p class="hint" style="margin-top:12px"><svg class="ico sm" style="color:var(--amber)"><use href="#i-alert"/></svg> Рассылка необратима и мгновенно уходит всем участникам.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ CLANS ============ -->
+      <section class="view" data-view-panel="clans">
+        <div class="section-head">
+          <div>
+            <h2>Кланы</h2>
+            <p>Список созданных кланов и их участников.</p>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Клан</th><th>Тег</th><th>Лидер</th><th>Участники</th><th>Создан</th><th style="text-align:right">Действия</th></tr></thead>
+            <tbody id="clans-body"></tbody>
+          </table>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</div>
+
+<!-- ==================== MODAL ==================== -->
+<div class="modal-backdrop" id="modal" style="display:none">
+  <div class="modal" id="modal-card">
+    <div class="modal-head">
+      <div><h3 id="modal-title">Заголовок</h3><p id="modal-sub"></p></div>
+      <button class="icon-btn" id="modal-close" title="Закрыть"><svg class="ico"><use href="#i-x"/></svg></button>
+    </div>
+    <div class="modal-body" id="modal-body"></div>
+    <div class="modal-foot" id="modal-foot"></div>
+  </div>
+</div>
+
+<div id="toast-host"></div>
+
+<script src="/vendor/pako.min.js"></script>
+<script src="/vendor/lottie.min.js"></script>
+<script>
+'use strict';
+/* ==================================================================
+   Runa Control — новый административный интерфейс
+   ================================================================== */
+const TOKEN_KEY = 'cc_admin_token';
+let token = localStorage.getItem(TOKEN_KEY) || '';
+let me = null;
+let toastSeq = 0;
+
+const state = {
+  view: 'dashboard',
+  users: [],
+  chats: [],
+  gifts: [],
+  giveaways: [],
+  stories: [],
+  badges: [],
+  clans: [],
+  messages: [],
+  stats: null,
+  chatFilter: 'all',
+  usersQuery: '',
+  chatsQuery: '',
+  messagesQuery: '',
+  messagesChat: '',
+  giftsQuery: '',
+  storiesQuery: ''
+};
+
+const $ = (id) => document.getElementById(id);
+const esc = (v) => String(v == null ? '' : v).replace(/[&<>"']/g, (c) => ({
+  '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+}[c]));
+const attr = esc;
+const icon = (name, cls = '') => `<svg class="ico ${cls}"><use href="#i-${name}"/></svg>`;
+
+function initialOf(name) {
+  return String(name || '?').trim().charAt(0).toUpperCase() || '?';
+}
+
+function avatarHtml(user, cls = 'av') {
+  const name = (user && (user.displayName || user.username || user.title)) || '?';
+  if (user && user.avatar) return `<span class="${cls}"><img src="${attr(user.avatar)}" alt="" loading="lazy"></span>`;
+  return `<span class="${cls}" style="background:${gradientFor(name)}">${esc(initialOf(name))}</span>`;
+}
+
+function gradientFor(name) {
+  const palettes = [
+    'linear-gradient(145deg,#2b3a31,#18211d)',
+    'linear-gradient(145deg,#2d3140,#1a1d27)',
+    'linear-gradient(145deg,#3a2f3f,#211a26)',
+    'linear-gradient(145deg,#243a3a,#16211f)',
+    'linear-gradient(145deg,#3a3527,#221f16)'
+  ];
+  let hash = 0;
+  const s = String(name || '');
+  for (let i = 0; i < s.length; i++) hash = (hash * 31 + s.charCodeAt(i)) >>> 0;
+  return palettes[hash % palettes.length];
+}
+
+function fmtNum(n) {
+  return Number(n || 0).toLocaleString('ru-RU');
+}
+
+function parseDate(value) {
+  if (!value) return new Date(0);
+  if (value instanceof Date) return value;
+  let s = String(value);
+  if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}/.test(s)) s = s.replace(' ', 'T') + 'Z';
+  return new Date(s);
+}
+
+function fmtDate(value) {
+  const d = parseDate(value);
+  if (!d || Number.isNaN(d.getTime())) return '—';
+  return d.toLocaleString('ru-RU', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+}
+
+function fmtDay(value) {
+  const d = parseDate(value);
+  if (!d || Number.isNaN(d.getTime())) return '—';
+  return d.toLocaleDateString('ru-RU', { day: '2-digit', month: 'short', year: 'numeric' });
+}
+
+function ago(value) {
+  const d = parseDate(value);
+  if (!d || Number.isNaN(d.getTime())) return '—';
+  const diff = Math.max(0, Date.now() - d.getTime());
+  const min = Math.floor(diff / 60000);
+  if (min < 1) return 'только что';
+  if (min < 60) return `${min} мин назад`;
+  const h = Math.floor(min / 60);
+  if (h < 24) return `${h} ч назад`;
+  const days = Math.floor(h / 24);
+  if (days < 30) return `${days} дн назад`;
+  return fmtDay(value);
+}
+
+function countdown(iso) {
+  const end = parseDate(iso).getTime();
+  const left = end - Date.now();
+  if (!Number.isFinite(left) || left <= 0) return 'завершается';
+  const total = Math.floor(left / 1000);
+  const d = Math.floor(total / 86400);
+  const h = Math.floor((total % 86400) / 3600);
+  const m = Math.floor((total % 3600) / 60);
+  if (d > 0) return `${d} д ${h} ч`;
+  if (h > 0) return `${h} ч ${m} мин`;
+  return `${m} мин`;
+}
+
+function plural(n, one, few, many) {
+  const abs = Math.abs(Number(n) || 0) % 100;
+  const last = abs % 10;
+  if (abs > 10 && abs < 20) return many;
+  if (last === 1) return one;
+  if (last >= 2 && last <= 4) return few;
+  return many;
+}
+
+/* ---------------- API ---------------- */
+async function api(path, opts = {}) {
+  const headers = Object.assign({}, opts.headers || {});
+  if (token) headers.Authorization = 'Bearer ' + token;
+  let body = opts.body;
+  if (body && !(body instanceof FormData)) {
+    headers['Content-Type'] = 'application/json';
+    body = JSON.stringify(body);
+  }
+  const res = await fetch(path, { method: opts.method || 'GET', headers, body });
+  const text = await res.text();
+  let data = null;
+  if (text) { try { data = JSON.parse(text); } catch (e) { data = text; } }
+  if (!res.ok) {
+    if (res.status === 401 || res.status === 403) {
+      if (path.startsWith('/api/admin') && res.status === 403) throw new Error('Нет прав администратора');
+      if (res.status === 401) { logout(true); }
+    }
+    throw new Error((data && data.error) || ('Ошибка ' + res.status));
+  }
+  return data;
+}
+
+/* ---------------- TOAST ---------------- */
+function toast(text, kind = 'ok') {
+  const host = $('toast-host');
+  if (!host) return;
+  const el = document.createElement('div');
+  el.className = `toast ${kind}`;
+  const ico = kind === 'err' ? 'alert' : kind === 'info' ? 'activity' : 'check';
+  el.innerHTML = `${icon(ico)}<span>${esc(text)}</span>`;
+  host.appendChild(el);
+  const id = ++toastSeq;
+  el.dataset.id = String(id);
+  setTimeout(() => {
+    el.classList.add('out');
+    setTimeout(() => el.remove(), 200);
+  }, kind === 'err' ? 4200 : 2800);
+}
+
+/* ---------------- MODAL ---------------- */
+function openModal({ title, sub = '', body = '', foot = '', wide = false, onMount }) {
+  const modal = $('modal');
+  const card = $('modal-card');
+  $('modal-title').textContent = title || '';
+  $('modal-sub').textContent = sub || '';
+  $('modal-sub').style.display = sub ? '' : 'none';
+  $('modal-body').innerHTML = body;
+  $('modal-foot').innerHTML = foot;
+  $('modal-foot').style.display = foot ? '' : 'none';
+  card.classList.toggle('wide', !!wide);
+  modal.style.display = 'flex';
+  if (typeof onMount === 'function') onMount();
+  return modal;
+}
+
+function closeModal() {
+  const modal = $('modal');
+  if (!modal) return;
+  modal.style.display = 'none';
+  $('modal-body').innerHTML = '';
+  $('modal-foot').innerHTML = '';
+}
+
+/* ---------------- NAVIGATION ---------------- */
+const VIEW_META = {
+  dashboard: { title: 'Дашборд', sub: 'Обзор состояния Runa' },
+  users: { title: 'Пользователи', sub: 'Аккаунты, баланс и доступ' },
+  chats: { title: 'Чаты и каналы', sub: 'Значки подтверждения и управление' },
+  messages: { title: 'Сообщения', sub: 'Модерация переписки' },
+  gifts: { title: 'Подарки', sub: 'Каталог маркета подарков' },
+  badges: { title: 'Значки', sub: 'Персональные отметки пользователей' },
+  giveaways: { title: 'Розыгрыши', sub: 'Призы и победители в каналах' },
+  stories: { title: 'Истории', sub: 'Публичные истории за 24 часа' },
+  broadcast: { title: 'Рассылка', sub: 'Сообщение во все чаты' },
+  clans: { title: 'Кланы', sub: 'Кланы и участники' }
+};
+
+function setView(name, opts = {}) {
+  if (!VIEW_META[name]) name = 'dashboard';
+  state.view = name;
+  document.querySelectorAll('.nav-item[data-view]').forEach((btn) => {
+    btn.classList.toggle('active', btn.dataset.view === name);
+  });
+  document.querySelectorAll('[data-view-panel]').forEach((panel) => {
+    panel.classList.toggle('active', panel.dataset.viewPanel === name);
+  });
+  $('view-title').textContent = VIEW_META[name].title;
+  $('view-subtitle').textContent = VIEW_META[name].sub;
+  const search = $('global-search');
+  if (search) {
+    search.value = '';
+    search.placeholder = name === 'messages' ? 'Поиск по сообщениям…'
+      : name === 'chats' ? 'Поиск чатов…'
+      : name === 'gifts' ? 'Поиск подарков…'
+      : name === 'stories' ? 'Поиск историй…'
+      : name === 'giveaways' ? 'Поиск розыгрышей…'
+      : 'Поиск по разделу…';
+  }
+  document.body.classList.remove('nav-open');
+  $('content').scrollTop = 0;
+  if (!opts.skipLoad) loadView(name);
+}
+
+function loadView(name) {
+  if (name === 'dashboard') return loadDashboard();
+  if (name === 'users') return loadUsers();
+  if (name === 'chats') return loadChats();
+  if (name === 'messages') return loadMessages();
+  if (name === 'gifts') return loadGifts();
+  if (name === 'badges') return loadBadges();
+  if (name === 'giveaways') return loadGiveaways();
+  if (name === 'stories') return loadStories();
+  if (name === 'clans') return loadClans();
+  if (name === 'broadcast') return loadBroadcast();
+}
+
+function emptyHtml(icoName, title, text) {
+  return `<div class="empty">${icon(icoName, 'lg')}<b>${esc(title)}</b><small>${esc(text)}</small></div>`;
+}
+
+/* ---------------- DASHBOARD ---------------- */
+async function loadDashboard() {
+  try {
+    const [stats, users, messages] = await Promise.all([
+      api('/api/admin/stats'),
+      api('/api/admin/users'),
+      api('/api/admin/messages')
+    ]);
+    state.stats = stats;
+    state.users = users;
+    state.messages = messages;
+    paintStats(stats);
+    paintDashUsers(users);
+    paintDashSystem(stats);
+    paintDashMessages(messages);
+    setCount('nav-count-users', stats.users);
+    setCount('nav-count-chats', stats.rooms);
+    setCount('nav-count-gifts', stats.gifts);
+    setCount('nav-count-giveaways', stats.giveawaysActive);
+    setCount('nav-count-stories', stats.storiesActive);
+  } catch (e) {
+    toast(e.message, 'err');
+  }
+}
+
+function setCount(id, value) {
+  const el = $(id);
+  if (el) el.textContent = fmtNum(value);
+}
+
+function paintStats(s) {
+  $('st-users').textContent = fmtNum(s.users);
+  $('st-online').textContent = fmtNum(s.online);
+  $('st-today').textContent = fmtNum(s.today);
+  $('st-rooms').textContent = fmtNum(s.rooms);
+  $('st-verified').textContent = fmtNum(s.verifiedChats);
+  $('st-messages').textContent = fmtNum(s.messages);
+  $('st-active').textContent = fmtNum(s.giveawaysActive + s.storiesActive);
+  $('st-giveaways').textContent = fmtNum(s.giveawaysActive);
+  $('st-stories').textContent = fmtNum(s.storiesActive);
+}
+
+function paintDashUsers(users) {
+  const host = $('dash-users');
+  if (!host) return;
+  const list = (users || []).slice(0, 7);
+  if (!list.length) { host.innerHTML = emptyHtml('users', 'Пользователей нет', 'Здесь появятся новые аккаунты.'); return; }
+  host.innerHTML = list.map((u) => `
+    <div class="dash-row">
+      ${avatarHtml(u)}
+      <div class="t"><b>${esc(u.displayName || u.username)}</b><small>@${esc(u.username)} · ${u.online ? 'в сети' : 'офлайн'}</small></div>
+      <span class="when">${esc(ago(u.createdAt))}</span>
+    </div>`).join('');
+}
+
+function paintDashSystem(s) {
+  const host = $('dash-system');
+  if (!host) return;
+  const rows = [
+    { label: 'Пользователи', value: s.users, ico: 'users', cls: 'ok' },
+    { label: 'Онлайн сейчас', value: s.online, ico: 'activity', cls: s.online ? 'ok' : 'mute' },
+    { label: 'Забанено', value: s.banned, ico: 'ban', cls: s.banned ? 'danger' : 'mute' },
+    { label: 'Premium', value: s.premium, ico: 'star', cls: 'violet' },
+    { label: 'Подарки в маркете', value: `${s.giftsActive} / ${s.gifts}`, ico: 'gift', cls: 'info' },
+    { label: 'Активные розыгрыши', value: s.giveawaysActive, ico: 'party', cls: 'violet' },
+    { label: 'Активные истории', value: s.storiesActive, ico: 'play', cls: 'warn' }
+  ];
+  host.innerHTML = rows.map((r) => `
+    <div class="dash-row">
+      <span class="av" style="background:rgba(125,255,179,.08);color:#9dffc4">${icon(r.ico, 'sm')}</span>
+      <div class="t"><b>${esc(r.label)}</b></div>
+      <span class="chip ${r.cls}">${esc(r.value)}</span>
+    </div>`).join('');
+}
+
+function paintDashMessages(messages) {
+  const host = $('dash-messages');
+  if (!host) return;
+  const list = (messages || []).slice(0, 7);
+  if (!list.length) { host.innerHTML = emptyHtml('messages', 'Сообщений нет', 'Здесь появятся последние сообщения.'); return; }
+  host.innerHTML = list.map((m) => `
+    <div class="dash-row">
+      <span class="av" style="background:rgba(111,184,255,.08);color:#a8d6ff">${esc(initialOf(m.display_name || m.username))}</span>
+      <div class="t"><b>${esc(m.display_name || m.username)}</b><small>${esc((m.text || '[вложение]').slice(0, 70))}</small></div>
+      <span class="when">${esc(ago(m.created_at))}</span>
+    </div>`).join('');
+}
+
+/* ---------------- USERS ---------------- */
+async function loadUsers() {
+  const grid = $('users-grid');
+  if (grid) grid.innerHTML = `<div class="empty">${icon('refresh', 'lg')}<b>Загрузка…</b></div>`;
+  try {
+    const q = state.usersQuery ? `?q=${encodeURIComponent(state.usersQuery)}` : '';
+    state.users = await api('/api/admin/users' + q);
+    renderUsers();
+    setCount('nav-count-users', state.users.length);
+  } catch (e) {
+    toast(e.message, 'err');
+    if (grid) grid.innerHTML = emptyHtml('alert', 'Не удалось загрузить', e.message);
+  }
+}
+
+function renderUsers() {
+  const grid = $('users-grid');
+  if (!grid) return;
+  const total = $('users-total');
+  if (total) total.textContent = `${state.users.length} ${plural(state.users.length, 'пользователь', 'пользователя', 'пользователей')}`;
+  if (!state.users.length) {
+    grid.innerHTML = emptyHtml('users', 'Ничего не найдено', 'Попробуйте изменить поисковый запрос.');
+    return;
+  }
+  grid.innerHTML = state.users.map((u) => {
+    const chips = [];
+    if (u.isAdmin) chips.push('<span class="chip violet">' + icon('shield', 'sm') + 'Админ</span>');
+    if (u.isPremium) chips.push('<span class="chip warn">' + icon('star', 'sm') + 'Premium</span>');
+    if (u.banned) chips.push('<span class="chip danger">' + icon('ban', 'sm') + 'Забанен</span>');
+    chips.push(`<span class="chip info">${icon('wallet', 'sm')}${fmtNum(u.rubies)} ₽</span>`);
+    chips.push(`<span class="chip mute">Ур. ${fmtNum(u.level)}</span>`);
+    const badges = (u.badges || []).map((b) => `<span class="chip mute" title="${attr(b.title)}">${esc(b.icon || '⭐')} ${esc(b.title)}</span>`).join('');
+    return `<article class="user-card" data-uid="${attr(u.id)}">
+      <div class="top">
+        ${avatarHtml(u)}
+        <div class="who"><b>${esc(u.displayName || u.username)}</b><small>@${esc(u.username)}</small></div>
+        ${u.online ? '<span class="dot-online" title="В сети"></span>' : ''}
+      </div>
+      <div class="chip-row">${chips.join('')}</div>
+      ${badges ? `<div class="chip-row">${badges}</div>` : ''}
+      <div class="foot">
+        <button class="btn btn-sm" data-user-edit="${attr(u.id)}">${icon('edit', 'sm')} Изменить</button>
+        <button class="btn btn-sm" data-user-currency="${attr(u.id)}">${icon('wallet', 'sm')} Баланс</button>
+        <button class="btn btn-sm btn-icon" data-user-badge="${attr(u.id)}" title="Выдать значок">${icon('award', 'sm')}</button>
+        ${u.banned
+          ? `<button class="btn btn-sm btn-icon" data-user-unban="${attr(u.id)}" title="Разбанить">${icon('check', 'sm')}</button>`
+          : `<button class="btn btn-sm btn-icon btn-danger" data-user-ban="${attr(u.id)}" title="Забанить">${icon('ban', 'sm')}</button>`}
+        <button class="btn btn-sm btn-icon btn-danger" data-user-delete="${attr(u.id)}" title="Удалить">${icon('trash', 'sm')}</button>
+      </div>
+    </article>`;
+  }).join('');
+}
+
+function findUser(id) { return state.users.find((u) => u.id === id); }
+
+async function openUserEditor(id) {
+  const base = findUser(id);
+  if (!base) return;
+  let u = base;
+  try {
+    const full = await api(`/api/users/${encodeURIComponent(id)}`);
+    if (full) u = Object.assign({}, base, {
+      banner: full.banner || '',
+      avatarFrame: full.avatarFrame || 'none',
+      bio: full.bio || base.bio,
+      city: full.city || base.city
+    });
+  } catch (e) { /* используем данные из списка */ }
+  const body = `
+    <div class="form-grid">
+      <div class="field"><label>Отображаемое имя</label><input class="input" id="uf-name" value="${attr(u.displayName || '')}"></div>
+      <div class="field"><label>@username</label><input class="input" id="uf-username" value="${attr(u.username || '')}"></div>
+      <div class="field full"><label>О себе</label><textarea class="input" id="uf-bio" style="min-height:70px">${esc(u.bio || '')}</textarea></div>
+      <div class="field"><label>Город</label><input class="input" id="uf-city" value="${attr(u.city || '')}"></div>
+      <div class="field"><label>Телефон</label><input class="input" id="uf-phone" value="${attr(u.phoneNumber || '')}"></div>
+      <div class="field"><label>Уровень</label><input class="input" id="uf-level" type="number" min="1" value="${attr(u.level || 1)}"></div>
+      <div class="field"><label>Рубины</label><input class="input" id="uf-rubies" type="number" min="0" value="${attr(u.rubies || 0)}"></div>
+      <div class="field"><label>Баланс MOPS</label><input class="input" id="uf-mops" type="number" min="0" value="${attr(u.mopsBalance || 0)}"></div>
+      <div class="field"><label>Новый пароль</label><input class="input" id="uf-password" type="password" placeholder="Оставьте пустым"></div>
+      <div class="field full"><label>Ссылка на аватар</label><input class="input" id="uf-avatar" value="${attr(u.avatar || '')}" placeholder="/uploads/…"></div>
+      <div class="field full"><label>Ссылка на баннер</label><input class="input" id="uf-banner" value="${attr(u.banner || '')}" placeholder="/uploads/…"></div>
+      <div class="field full"><label>Рамка аватара</label>
+        <select class="select" id="uf-frame">
+          ${['none', 'gold', 'purple', 'neon', 'fire', 'ice'].map((f) => `<option value="${f}" ${((u.avatarFrame || 'none') === f) ? 'selected' : ''}>${f}</option>`).join('')}
+        </select>
+      </div>
+    </div>
+    <div class="switch-row"><div class="lab"><b>Администратор</b><small>Полный доступ к панели</small></div>
+      <label class="switch"><input type="checkbox" id="uf-admin" ${u.isAdmin ? 'checked' : ''}><span class="track"></span></label></div>
+    <div class="switch-row"><div class="lab"><b>Premium</b><small>Премиум-статус аккаунта</small></div>
+      <label class="switch"><input type="checkbox" id="uf-premium" ${u.isPremium ? 'checked' : ''}><span class="track"></span></label></div>
+    <div class="switch-row"><div class="lab"><b>Заблокирован</b><small>Не сможет войти в Runa</small></div>
+      <label class="switch"><input type="checkbox" id="uf-banned" ${u.banned ? 'checked' : ''}><span class="track"></span></label></div>`;
+
+  openModal({
+    title: u.displayName || u.username,
+    sub: `@${u.username} · создан ${fmtDay(u.createdAt)}`,
+    body,
+    wide: true,
+    foot: `<button class="btn btn-ghost" data-modal-cancel>Отмена</button>
+           <button class="btn btn-primary" id="uf-save">${icon('check', 'sm')} Сохранить</button>`,
+    onMount() {
+      $('uf-save').addEventListener('click', () => saveUser(u.id));
+    }
+  });
+}
+
+async function saveUser(id) {
+  const btn = $('uf-save');
+  btn.disabled = true;
+  const payload = {
+    display_name: $('uf-name').value.trim(),
+    username: $('uf-username').value.trim(),
+    bio: $('uf-bio').value.trim(),
+    city: $('uf-city').value.trim(),
+    phone_number: $('uf-phone').value.trim(),
+    level: Number($('uf-level').value) || 1,
+    rubies: Number($('uf-rubies').value) || 0,
+    mops_balance: Number($('uf-mops').value) || 0,
+    avatar: $('uf-avatar').value.trim(),
+    banner: $('uf-banner').value.trim(),
+    avatar_frame: $('uf-frame').value,
+    is_admin: $('uf-admin').checked,
+    is_premium: $('uf-premium').checked,
+    banned: $('uf-banned').checked
+  };
+  const pass = $('uf-password').value;
+  if (pass) payload.password = pass;
+  try {
+    await api(`/api/admin/users/${encodeURIComponent(id)}`, { method: 'PATCH', body: payload });
+    toast('Профиль обновлён');
+    closeModal();
+    await loadUsers();
+  } catch (e) {
+    toast(e.message, 'err');
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+function openCurrencyModal(id) {
+  const u = findUser(id);
+  if (!u) return;
+  openModal({
+    title: 'Начислить баланс',
+    sub: `${u.displayName || u.username} · сейчас ${fmtNum(u.rubies)} ₽`,
+    body: `<div class="form-grid">
+      <div class="field"><label>Рубины</label><input class="input" id="cur-rubies" type="number" step="1" placeholder="0"></div>
+      <div class="field"><label>MOPS</label><input class="input" id="cur-mops" type="number" step="1" placeholder="0"></div>
+    </div>
+    <p class="hint">Укажите положительное число для начисления или отрицательное для списания.</p>`,
+    foot: `<button class="btn btn-ghost" data-modal-cancel>Отмена</button>
+           <button class="btn btn-primary" id="cur-save">${icon('wallet', 'sm')} Начислить</button>`,
+    onMount() {
+      $('cur-save').addEventListener('click', async () => {
+        const rubies = Number($('cur-rubies').value) || 0;
+        const mops = Number($('cur-mops').value) || 0;
+        if (!rubies && !mops) { toast('Введите сумму', 'err'); return; }
+        try {
+          await api('/api/admin/give-currency', { method: 'POST', body: { userId: id, rubies, mops } });
+          toast('Баланс обновлён');
+          closeModal();
+          await loadUsers();
+        } catch (e) { toast(e.message, 'err'); }
+      });
+    }
+  });
+}
+
+function openBadgeModal(id) {
+  const u = findUser(id);
+  if (!u) return;
+  openModal({
+    title: 'Выдать значок',
+    sub: `Пользователь ${u.displayName || u.username}`,
+    body: `<div class="form-grid">
+      <div class="field"><label>Иконка (эмодзи или lucide)</label><input class="input" id="badge-icon" value="⭐" maxlength="32"></div>
+      <div class="field"><label>Цвет</label><input class="input" id="badge-color" type="color" value="#7dffb3" style="height:44px;padding:4px"></div>
+      <div class="field full"><label>Подпись</label><input class="input" id="badge-title" placeholder="Например, Легенда Runa" maxlength="40"></div>
+    </div>
+    <p class="hint">Значок появится в профиле пользователя рядом с именем.</p>`,
+    foot: `<button class="btn btn-ghost" data-modal-cancel>Отмена</button>
+           <button class="btn btn-primary" id="badge-save">${icon('award', 'sm')} Выдать</button>`,
+    onMount() {
+      $('badge-save').addEventListener('click', async () => {
+        const iconVal = $('badge-icon').value.trim() || '⭐';
+        const title = $('badge-title').value.trim() || 'Значок';
+        const color = $('badge-color').value;
+        try {
+          await api(`/api/admin/users/${encodeURIComponent(id)}/badges`, { method: 'POST', body: { icon: iconVal, title, color } });
+          toast('Значок выдан');
+          closeModal();
+          await loadUsers();
+        } catch (e) { toast(e.message, 'err'); }
+      });
+    }
+  });
+}
+
+async function banUser(id, unban = false) {
+  if (!unban && !confirm('Заблокировать пользователя?')) return;
+  try {
+    await api(`/api/admin/users/${encodeURIComponent(id)}/${unban ? 'unban' : 'ban'}`, { method: 'POST' });
+    toast(unban ? 'Пользователь разбанен' : 'Пользователь заблокирован');
+    await loadUsers();
+  } catch (e) { toast(e.message, 'err'); }
+}
+
+async function deleteUser(id) {
+  const u = findUser(id);
+  if (!confirm(`Удалить пользователя @${u ? u.username : id}? Действие необратимо.`)) return;
+  try {
+    await api(`/api/admin/users/${encodeURIComponent(id)}`, { method: 'DELETE' });
+    toast('Пользователь удалён');
+    await loadUsers();
+  } catch (e) { toast(e.message, 'err'); }
+}
+
+/* ---------------- CHATS ---------------- */
+const BADGE_META = {
+  verified: { icon: 'badge-check', cls: 'verified', label: 'Подтверждённый' },
+  premium: { icon: 'star', cls: 'premium', label: 'Premium' },
+  crown: { icon: 'crown', cls: 'crown', label: 'Корона' }
+};
+
+function chatBadgeIcon(type) {
+  const meta = BADGE_META[type];
+  if (!meta) return '';
+  return `<svg class="ico badge-ico ${meta.cls}" title="${meta.label}"><use href="#i-${meta.icon}"/></svg>`;
+}
+
+async function loadChats() {
+  const list = $('chats-list');
+  if (list) list.innerHTML = `<div class="empty">${icon('refresh', 'lg')}<b>Загрузка…</b></div>`;
+  try {
+    state.chats = await api('/api/admin/chats');
+    renderChats();
+    fillChatFilter();
+    setCount('nav-count-chats', state.chats.length);
+  } catch (e) {
+    toast(e.message, 'err');
+    if (list) list.innerHTML = emptyHtml('alert', 'Не удалось загрузить', e.message);
+  }
+}
+
+function renderChats() {
+  const list = $('chats-list');
+  if (!list) return;
+  const q = state.chatsQuery.toLowerCase();
+  let items = state.chats.slice();
+  if (state.chatFilter === 'channel' || state.chatFilter === 'group') items = items.filter((c) => c.type === state.chatFilter);
+  if (state.chatFilter === 'badge') items = items.filter((c) => !!c.badgeType);
+  if (q) items = items.filter((c) => String(c.title || '').toLowerCase().includes(q) || String(c.username || '').toLowerCase().includes(q));
+  if (!items.length) {
+    list.innerHTML = emptyHtml('chat', 'Ничего не найдено', 'Измените фильтр или создайте новый канал.');
+    return;
+  }
+  list.innerHTML = items.map((c) => `
+    <div class="chat-row" data-cid="${attr(c.id)}">
+      ${avatarHtml({ avatar: c.avatar, title: c.title })}
+      <div class="info">
+        <div class="line1"><b>${esc(c.title || 'Без названия')}</b>${chatBadgeIcon(c.badgeType)}</div>
+        <small>${c.username ? '@' + esc(c.username) + ' · ' : ''}${c.type === 'channel' ? 'канал' : 'группа'} · ${fmtNum(c.members)} ${plural(c.members, 'участник', 'участника', 'участников')} · ${fmtNum(c.messages)} сообщ.</small>
+      </div>
+      <div class="side">
+        <select class="select" data-chat-badge="${attr(c.id)}" style="width:132px;padding:6px 30px 6px 9px;font-size:11.5px" title="Значок канала">
+          <option value="" ${!c.badgeType ? 'selected' : ''}>Без значка</option>
+          <option value="verified" ${c.badgeType === 'verified' ? 'selected' : ''}>Подтверждён</option>
+          <option value="premium" ${c.badgeType === 'premium' ? 'selected' : ''}>Premium</option>
+          <option value="crown" ${c.badgeType === 'crown' ? 'selected' : ''}>Корона</option>
+        </select>
+        <button class="icon-btn" data-chat-edit="${attr(c.id)}" title="Изменить">${icon('edit', 'sm')}</button>
+        <button class="icon-btn" data-chat-open="${attr(c.id)}" title="Открыть в Runa">${icon('external', 'sm')}</button>
+        <button class="icon-btn danger" data-chat-delete="${attr(c.id)}" title="Удалить">${icon('trash', 'sm')}</button>
+      </div>
+    </div>`).join('');
+}
+
+function fillChatFilter() {
+  const sel = $('messages-chat-filter');
+  if (!sel) return;
+  const current = sel.value;
+  sel.innerHTML = '<option value="">Все чаты</option>' + state.chats
+    .filter((c) => c.type !== 'dm')
+    .map((c) => `<option value="${attr(c.id)}">${esc(c.title || c.id)}</option>`).join('');
+  sel.value = current;
+}
+
+function openChatEditor(id) {
+  const c = state.chats.find((x) => x.id === id);
+  if (!c) return;
+  openModal({
+    title: 'Настройки чата',
+    sub: `${c.type === 'channel' ? 'Канал' : 'Группа'} · ${fmtNum(c.members)} участников`,
+    body: `<div class="form-grid">
+      <div class="field full"><label>Название</label><input class="input" id="cf-title" value="${attr(c.title || '')}" maxlength="80"></div>
+      <div class="field"><label>Тип</label><select class="select" id="cf-type">
+        <option value="channel" ${c.type === 'channel' ? 'selected' : ''}>Канал</option>
+        <option value="group" ${c.type === 'group' ? 'selected' : ''}>Группа</option>
+      </select></div>
+      <div class="field"><label>Значок</label><select class="select" id="cf-badge">
+        <option value="" ${!c.badgeType ? 'selected' : ''}>Без значка</option>
+        <option value="verified" ${c.badgeType === 'verified' ? 'selected' : ''}>Подтверждён</option>
+        <option value="premium" ${c.badgeType === 'premium' ? 'selected' : ''}>Premium</option>
+        <option value="crown" ${c.badgeType === 'crown' ? 'selected' : ''}>Корона</option>
+      </select></div>
+      <div class="field full"><label>Описание</label><textarea class="input" id="cf-about" style="min-height:70px" maxlength="300">${esc(c.about || '')}</textarea></div>
+      <div class="field full"><label>Аватар (URL)</label><input class="input" id="cf-avatar" value="${attr(c.avatar || '')}" placeholder="/uploads/…"></div>
+    </div>
+    <div class="switch-row"><div class="lab"><b>Закрепить</b><small>Чат будет выше в списке</small></div>
+      <label class="switch"><input type="checkbox" id="cf-pinned" ${c.pinned ? 'checked' : ''}><span class="track"></span></label></div>`,
+    foot: `<button class="btn btn-ghost" data-modal-cancel>Отмена</button>
+           <button class="btn btn-primary" id="cf-save">${icon('check', 'sm')} Сохранить</button>`,
+    onMount() {
+      $('cf-save').addEventListener('click', () => saveChat(c.id));
+    }
+  });
+}
+
+async function saveChat(id) {
+  try {
+    await api(`/api/admin/chats/${encodeURIComponent(id)}`, {
+      method: 'PATCH',
+      body: {
+        title: $('cf-title').value.trim(),
+        type: $('cf-type').value,
+        about: $('cf-about').value.trim(),
+        avatar: $('cf-avatar').value.trim(),
+        pinned: $('cf-pinned').checked,
+        badge_type: $('cf-badge').value
+      }
+    });
+    toast('Чат обновлён');
+    closeModal();
+    await loadChats();
+  } catch (e) { toast(e.message, 'err'); }
+}
+
+async function setChatBadge(id, badge) {
+  try {
+    await api(`/api/admin/chats/${encodeURIComponent(id)}`, { method: 'PATCH', body: { badge_type: badge } });
+    const c = state.chats.find((x) => x.id === id);
+    if (c) c.badgeType = badge;
+    toast(badge ? 'Значок выдан' : 'Значок снят');
+    renderChats();
+  } catch (e) { toast(e.message, 'err'); }
+}
+
+function openChatCreate() {
+  openModal({
+    title: 'Новый канал',
+    sub: 'Канал появится в списке чатов у всех пользователей',
+    body: `<div class="form-grid">
+      <div class="field full"><label>Название</label><input class="input" id="nc-title" placeholder="Например, Runa News" maxlength="80"></div>
+      <div class="field"><label>Тип</label><select class="select" id="nc-type"><option value="channel">Канал</option><option value="group">Группа</option></select></div>
+      <div class="field"><label>Значок</label><select class="select" id="nc-badge">
+        <option value="">Без значка</option><option value="verified">Подтверждён</option><option value="premium">Premium</option><option value="crown">Корона</option>
+      </select></div>
+      <div class="field full"><label>Описание</label><textarea class="input" id="nc-about" style="min-height:70px" placeholder="О чём этот канал?"></textarea></div>
+    </div>`,
+    foot: `<button class="btn btn-ghost" data-modal-cancel>Отмена</button>
+           <button class="btn btn-primary" id="nc-save">${icon('plus', 'sm')} Создать</button>`,
+    onMount() {
+      $('nc-save').addEventListener('click', async () => {
+        const title = $('nc-title').value.trim();
+        if (!title) { toast('Введите название', 'err'); return; }
+        try {
+          const created = await api('/api/admin/chats', {
+            method: 'POST',
+            body: { title, type: $('nc-type').value, about: $('nc-about').value.trim() }
+          });
+          const badge = $('nc-badge').value;
+          if (badge && created && created.id) {
+            await api(`/api/admin/chats/${encodeURIComponent(created.id)}`, { method: 'PATCH', body: { badge_type: badge } });
+          }
+          toast('Канал создан');
+          closeModal();
+          await loadChats();
+        } catch (e) { toast(e.message, 'err'); }
+      });
+    }
+  });
+}
+
+async function deleteChat(id) {
+  const c = state.chats.find((x) => x.id === id);
+  if (!confirm(`Удалить «${c ? c.title : id}» вместе со всеми сообщениями?`)) return;
+  try {
+    await api(`/api/admin/chats/${encodeURIComponent(id)}`, { method: 'DELETE' });
+    toast('Чат удалён');
+    await loadChats();
+  } catch (e) { toast(e.message, 'err'); }
+}
+
+/* ---------------- MESSAGES ---------------- */
+async function loadMessages() {
+  const body = $('messages-body');
+  if (body) body.innerHTML = `<tr><td colspan="5"><div class="empty"><b>Загрузка…</b></div></td></tr>`;
+  try {
+    if (!state.chats.length) state.chats = await api('/api/admin/chats');
+    fillChatFilter();
+    const params = new URLSearchParams();
+    if (state.messagesQuery) params.set('q', state.messagesQuery);
+    if (state.messagesChat) params.set('chatId', state.messagesChat);
+    const qs = params.toString();
+    state.messages = await api('/api/admin/messages' + (qs ? '?' + qs : ''));
+    renderMessages();
+  } catch (e) {
+    toast(e.message, 'err');
+    if (body) body.innerHTML = `<tr><td colspan="5">${emptyHtml('alert', 'Не удалось загрузить', e.message)}</td></tr>`;
+  }
+}
+
+function renderMessages() {
+  const body = $('messages-body');
+  if (!body) return;
+  const total = $('messages-total');
+  if (total) total.textContent = `${state.messages.length} сообщений`;
+  if (!state.messages.length) {
+    body.innerHTML = `<tr><td colspan="5">${emptyHtml('messages', 'Сообщений нет', 'Попробуйте другой запрос или выберите чат.')}</td></tr>`;
+    return;
+  }
+  body.innerHTML = state.messages.map((m) => `
+    <tr>
+      <td><div class="cell-user">${avatarHtml({ avatar: m.avatar, displayName: m.display_name })}
+        <div class="n"><b>${esc(m.display_name || m.username)}</b><small>@${esc(m.username)}</small></div></div></td>
+      <td><span class="chip mute">${esc(m.chat_title || '—')}</span></td>
+      <td style="max-width:420px"><div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:420px">${esc(m.text || '[вложение]')}</div></td>
+      <td><span class="dim" style="font-size:11px">${esc(fmtDate(m.created_at))}</span></td>
+      <td><div class="row-actions"><button class="icon-btn danger" data-msg-delete="${attr(m.id)}" title="Удалить">${icon('trash', 'sm')}</button></div></td>
+    </tr>`).join('');
+}
+
+async function deleteMessage(id) {
+  if (!confirm('Удалить это сообщение?')) return;
+  try {
+    await api(`/api/admin/messages/${encodeURIComponent(id)}`, { method: 'DELETE' });
+    toast('Сообщение удалено');
+    await loadMessages();
+  } catch (e) { toast(e.message, 'err'); }
+}
+
+/* ---------------- GIFTS ---------------- */
+function contrastText(color) {
+  const m = /^#([0-9a-f]{6})$/i.exec(String(color || ''));
+  if (!m) return '#eef4ef';
+  const n = parseInt(m[1], 16);
+  const r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
+  const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  return lum > 0.62 ? '#08110c' : '#ffffff';
+}
+
+function giftIsLottie(g) {
+  const url = String(g.fileUrl || '').toLowerCase();
+  const type = String(g.fileType || '').toLowerCase();
+  return !!(url && (type === 'tgs' || type === 'lottie' || url.endsWith('.tgs') || url.endsWith('.json')));
+}
+
+function giftPreviewHtml(g) {
+  const url = String(g.fileUrl || '');
+  if (giftIsLottie(g)) return `<div class="lottie" data-lottie="${attr(url)}"></div>`;
+  if (url && /\.(png|jpe?g|webp|gif|svg|avif)$/i.test(url)) return `<img src="${attr(url)}" alt="" loading="lazy">`;
+  if (url && /\.(mp4|webm|mov|m4v)$/i.test(url)) return `<video src="${attr(url)}" muted loop autoplay playsinline></video>`;
+  return `<span class="emoji">${esc(g.emoji || '🎁')}</span>`;
+}
+
+function mountLotties(root) {
+  const scope = root || document;
+  if (!window.lottie) return;
+  scope.querySelectorAll('[data-lottie]').forEach((el) => {
+    if (el.dataset.mounted === '1') return;
+    el.dataset.mounted = '1';
+    const url = el.dataset.lottie;
+    if (!url) return;
+    fetch(url)
+      .then((r) => { if (!r.ok) throw new Error('fetch'); return r.arrayBuffer(); })
+      .then((buf) => {
+        let data;
+        if (url.toLowerCase().endsWith('.tgs')) {
+          if (!window.pako) throw new Error('pako');
+          const json = pako.ungzip(new Uint8Array(buf), { to: 'string' });
+          data = JSON.parse(json);
+        } else {
+          data = JSON.parse(new TextDecoder().decode(buf));
+        }
+        lottie.loadAnimation({ container: el, renderer: 'svg', loop: true, autoplay: true, animationData: data });
+      })
+      .catch(() => {
+        el.innerHTML = `<span style="font-size:34px">${esc(el.dataset.fallback || '🎁')}</span>`;
+      });
+  });
+}
+
+async function loadGifts() {
+  const grid = $('gifts-grid');
+  if (grid) grid.innerHTML = `<div class="empty">${icon('refresh', 'lg')}<b>Загрузка…</b></div>`;
+  try {
+    state.gifts = await api('/api/admin/gifts');
+    renderGifts();
+    setCount('nav-count-gifts', state.gifts.length);
+  } catch (e) {
+    toast(e.message, 'err');
+    if (grid) grid.innerHTML = emptyHtml('alert', 'Не удалось загрузить', e.message);
+  }
+}
+
+function renderGifts() {
+  const grid = $('gifts-grid');
+  if (!grid) return;
+  const q = state.giftsQuery.toLowerCase();
+  const items = q ? state.gifts.filter((g) => String(g.title || '').toLowerCase().includes(q) || String(g.slug || '').toLowerCase().includes(q)) : state.gifts;
+  if (!items.length) {
+    grid.innerHTML = emptyHtml('gift', 'Подарков нет', 'Добавьте первый подарок в маркет.');
+    return;
+  }
+  grid.innerHTML = items.map((g) => `
+    <article class="gift-card" data-gid="${attr(g.id)}">
+      <div class="preview">${giftPreviewHtml(g)}</div>
+      <div class="name">${esc(g.emoji || '🎁')} ${esc(g.title)}</div>
+      <div class="meta">
+        <span class="chip info">${fmtNum(g.price)} ₽</span>
+        <span class="chip mute rarity-${esc(g.rarity)}">${esc(g.rarity)}</span>
+        ${g.active ? '<span class="chip ok">Активен</span>' : '<span class="chip warn">Скрыт</span>'}
+        <span class="chip mute">${fmtNum(g.receivedCount)} отправлен</span>
+      </div>
+      <div class="desc">${esc(g.description || 'Без описания')}</div>
+      <div class="foot">
+        <button class="btn btn-sm" data-gift-edit="${attr(g.id)}">${icon('edit', 'sm')} Изменить</button>
+        <button class="btn btn-sm btn-danger" data-gift-delete="${attr(g.id)}" title="Удалить">${icon('trash', 'sm')}</button>
+      </div>
+    </article>`).join('');
+  mountLotties(grid);
+}
+
+function giftFormBody(g) {
+  const isNew = !g;
+  const fileUrl = g ? g.fileUrl : '';
+  const fileType = g ? g.fileType : '';
+  return `<div class="form-grid">
+    <div class="field"><label>Название</label><input class="input" id="gf-title" value="${attr(g ? g.title : '')}" placeholder="Например, Redo" maxlength="80"></div>
+    <div class="field"><label>Slug</label><input class="input" id="gf-slug" value="${attr(g ? g.slug : '')}" placeholder="first-gift" ${isNew ? '' : 'disabled'}></div>
+    <div class="field"><label>Эмодзи</label><input class="input" id="gf-emoji" value="${attr(g ? g.emoji : '🎁')}" maxlength="8"></div>
+    <div class="field"><label>Цена, ₽</label><input class="input" id="gf-price" type="number" min="0" step="1" value="${attr(g ? g.price : 100)}"></div>
+    <div class="field"><label>Редкость</label><select class="select" id="gf-rarity">
+      ${['common', 'rare', 'epic', 'legendary'].map((r) => `<option value="${r}" ${((g ? g.rarity : 'common') === r) ? 'selected' : ''}>${r}</option>`).join('')}
+    </select></div>
+    <div class="field"><label>Файл (URL)</label><input class="input" id="gf-file" value="${attr(fileUrl)}" placeholder="/uploads/gift-001.tgs"></div>
+    <div class="field full"><label>Описание</label><textarea class="input" id="gf-desc" style="min-height:64px" maxlength="300">${esc(g ? g.description : '')}</textarea></div>
+  </div>
+  <div class="switch-row"><div class="lab"><b>Активен в маркете</b><small>Подарок смогут купить и отправить</small></div>
+    <label class="switch"><input type="checkbox" id="gf-active" ${(!g || g.active) ? 'checked' : ''}><span class="track"></span></label></div>
+  <div>
+    <span class="field-label">Анимация или изображение</span>
+    <div class="preview-box" id="gf-preview">${g ? giftPreviewHtml(g) : '<span class="dim" style="font-size:11.5px">Предпросмотр появится после выбора файла</span>'}</div>
+    <div class="toolbar" style="margin:9px 0 0">
+      <button class="btn btn-sm" id="gf-upload-btn">${icon('upload', 'sm')} Загрузить файл</button>
+      <button class="btn btn-sm btn-ghost" id="gf-preset-btn">${icon('gift', 'sm')} gift-001.tgs</button>
+      <input type="file" id="gf-file-input" accept=".tgs,.json,image/*,video/*" hidden>
+      <span class="hint" id="gf-file-hint">${esc(fileType ? 'Тип: ' + fileType : 'TGS, Lottie JSON, PNG, GIF или MP4')}</span>
+    </div>
+  </div>`;
+}
+
+function openGiftEditor(id) {
+  const g = id ? state.gifts.find((x) => x.id === id) : null;
+  openModal({
+    title: g ? 'Редактировать подарок' : 'Новый подарок',
+    sub: g ? `${g.slug} · ${fmtNum(g.receivedCount)} отправлений` : 'Появится в маркете подарков Runa',
+    wide: true,
+    body: giftFormBody(g),
+    foot: `<button class="btn btn-ghost" data-modal-cancel>Отмена</button>
+           <button class="btn btn-primary" id="gf-save">${icon('check', 'sm')} ${g ? 'Сохранить' : 'Создать'}</button>`,
+    onMount() {
+      mountLotties($('modal-body'));
+      const input = $('gf-file-input');
+      const fileField = $('gf-file');
+      $('gf-upload-btn').addEventListener('click', () => input.click());
+      $('gf-preset-btn').addEventListener('click', () => {
+        fileField.value = '/uploads/gift-001.tgs';
+        $('gf-file-hint').textContent = 'Тип: tgs';
+        $('gf-preview').innerHTML = `<div class="lottie" data-lottie="/uploads/gift-001.tgs" data-fallback="🎁"></div>`;
+        mountLotties($('gf-preview'));
+      });
+      input.addEventListener('change', async () => {
+        const file = input.files && input.files[0];
+        if (!file) return;
+        if (file.size > 50 * 1024 * 1024) { toast('Файл больше 50 МБ', 'err'); return; }
+        const fd = new FormData();
+        fd.append('file', file);
+        const hint = $('gf-file-hint');
+        hint.textContent = 'Загрузка…';
+        try {
+          const up = await api('/api/upload', { method: 'POST', body: fd });
+          fileField.value = up.url;
+          const ext = String(file.name).split('.').pop().toLowerCase();
+          const kind = ext === 'tgs' ? 'tgs' : (ext === 'json' ? 'lottie' : (/^(png|jpe?g|webp|gif|svg|avif)$/.test(ext) ? 'image' : 'video'));
+          hint.textContent = 'Тип: ' + kind;
+          $('gf-preview').innerHTML = giftPreviewHtml({ fileUrl: up.url, fileType: kind, emoji: $('gf-emoji').value });
+          mountLotties($('gf-preview'));
+          toast('Файл загружен');
+        } catch (e) {
+          hint.textContent = 'Ошибка загрузки';
+          toast(e.message, 'err');
+        }
+      });
+      fileField.addEventListener('change', () => {
+        const url = fileField.value.trim();
+        const ext = url.split('.').pop().toLowerCase();
+        const kind = ext === 'tgs' ? 'tgs' : (ext === 'json' ? 'lottie' : (/^(png|jpe?g|webp|gif|svg|avif)$/.test(ext) ? 'image' : (ext ? 'video' : '')));
+        $('gf-file-hint').textContent = kind ? 'Тип: ' + kind : 'TGS, Lottie JSON, PNG, GIF или MP4';
+        $('gf-preview').innerHTML = giftPreviewHtml({ fileUrl: url, fileType: kind, emoji: $('gf-emoji').value });
+        mountLotties($('gf-preview'));
+      });
+      $('gf-save').addEventListener('click', () => saveGift(g ? g.id : null));
+    }
+  });
+}
+
+async function saveGift(id) {
+  const title = $('gf-title').value.trim();
+  if (!title) { toast('Введите название', 'err'); return; }
+  const fileUrl = $('gf-file').value.trim();
+  const ext = fileUrl.split('.').pop().toLowerCase();
+  const fileType = ext === 'tgs' ? 'tgs' : (ext === 'json' ? 'lottie' : (/^(png|jpe?g|webp|gif|svg|avif)$/.test(ext) ? 'image' : (ext ? 'video' : '')));
+  const payload = {
+    title,
+    emoji: $('gf-emoji').value || '🎁',
+    price: Number($('gf-price').value) || 0,
+    rarity: $('gf-rarity').value,
+    description: $('gf-desc').value.trim(),
+    fileUrl,
+    fileType,
+    active: $('gf-active').checked
+  };
+  if (!id) payload.slug = $('gf-slug').value.trim();
+  try {
+    if (id) await api(`/api/admin/gifts/${encodeURIComponent(id)}`, { method: 'PATCH', body: payload });
+    else await api('/api/admin/gifts', { method: 'POST', body: payload });
+    toast(id ? 'Подарок обновлён' : 'Подарок создан');
+    closeModal();
+    await loadGifts();
+  } catch (e) { toast(e.message, 'err'); }
+}
+
+async function deleteGift(id) {
+  const g = state.gifts.find((x) => x.id === id);
+  if (!confirm(`Удалить подарок «${g ? g.title : id}»?`)) return;
+  try {
+    await api(`/api/admin/gifts/${encodeURIComponent(id)}`, { method: 'DELETE' });
+    toast('Подарок удалён');
+    await loadGifts();
+  } catch (e) { toast(e.message, 'err'); }
+}
+
+/* ---------------- BADGES ---------------- */
+async function loadBadges() {
+  const body = $('badges-body');
+  if (body) body.innerHTML = `<tr><td colspan="5"><div class="empty"><b>Загрузка…</b></div></td></tr>`;
+  try {
+    state.badges = await api('/api/admin/badges');
+    renderBadges();
+  } catch (e) {
+    toast(e.message, 'err');
+    if (body) body.innerHTML = `<tr><td colspan="5">${emptyHtml('alert', 'Не удалось загрузить', e.message)}</td></tr>`;
+  }
+}
+
+function renderBadges() {
+  const body = $('badges-body');
+  if (!body) return;
+  if (!state.badges.length) {
+    body.innerHTML = `<tr><td colspan="5">${emptyHtml('award', 'Значков нет', 'Выдайте значок из карточки пользователя.')}</td></tr>`;
+    return;
+  }
+  body.innerHTML = state.badges.map((b) => `
+    <tr>
+      <td><div class="cell-user">${avatarHtml({ avatar: b.avatar, displayName: b.displayName })}
+        <div class="n"><b>${esc(b.displayName || b.username || '—')}</b><small>@${esc(b.username || '—')}</small></div></div></td>
+      <td><span class="chip" style="background:${attr(b.color || 'rgba(255,255,255,.06)')};color:${contrastText(b.color)}">${esc(b.icon || '⭐')}</span></td>
+      <td>${esc(b.title || '—')}</td>
+      <td><span class="dim" style="font-size:11px">${esc(fmtDate(b.createdAt))}</span></td>
+      <td><div class="row-actions"><button class="icon-btn danger" data-badge-delete="${attr(b.id)}" title="Удалить">${icon('trash', 'sm')}</button></div></td>
+    </tr>`).join('');
+}
+
+async function deleteBadge(id) {
+  if (!confirm('Удалить значок?')) return;
+  try {
+    await api(`/api/admin/badges/${encodeURIComponent(id)}`, { method: 'DELETE' });
+    toast('Значок удалён');
+    await loadBadges();
+  } catch (e) { toast(e.message, 'err'); }
+}
+
+/* ---------------- GIVEAWAYS ---------------- */
+async function loadGiveaways() {
+  const list = $('giveaways-list');
+  if (list) list.innerHTML = `<div class="empty">${icon('refresh', 'lg')}<b>Загрузка…</b></div>`;
+  try {
+    state.giveaways = await api('/api/admin/giveaways');
+    renderGiveaways();
+    setCount('nav-count-giveaways', state.giveaways.filter((g) => g.status === 'active').length);
+  } catch (e) {
+    toast(e.message, 'err');
+    if (list) list.innerHTML = emptyHtml('alert', 'Не удалось загрузить', e.message);
+  }
+}
+
+function giveawayStatusChip(g) {
+  if (g.status === 'active') return '<span class="chip ok">Активен</span>';
+  if (g.status === 'canceled') return '<span class="chip mute">Отменён</span>';
+  return '<span class="chip info">Завершён</span>';
+}
+
+function renderGiveaways() {
+  const list = $('giveaways-list');
+  if (!list) return;
+  if (!state.giveaways.length) {
+    list.innerHTML = emptyHtml('party', 'Розыгрышей нет', 'Запустите первый розыгрыш в канале.');
+    return;
+  }
+  list.innerHTML = state.giveaways.map((g) => `
+    <div class="gw-row ${g.status === 'active' ? 'active' : ''}" data-gwid="${attr(g.id)}">
+      <span class="icon">${icon('party')}</span>
+      <div class="info">
+        <b>${esc(g.title || 'Розыгрыш')}</b>
+        <small>${esc(g.chatTitle)} · ${esc(g.prizeLabel)} · ${fmtNum(g.participants)} ${plural(g.participants, 'участник', 'участника', 'участников')} · ${fmtNum(g.winners)} ${plural(g.winners, 'победитель', 'победителя', 'победителей')}</small>
+        ${g.status === 'active' ? `<span class="timer">${icon('timer')} до ${esc(fmtDate(g.endsAt))} · ${esc(countdown(g.endsAt))}</span>` : `<span class="dim" style="font-size:10.5px">завершён ${esc(fmtDate(g.finishedAt || g.endsAt))}</span>`}
+      </div>
+      <div class="side">
+        ${giveawayStatusChip(g)}
+        ${g.status === 'active' ? `<button class="btn btn-sm btn-violet" data-gw-draw="${attr(g.id)}">${icon('flag', 'sm')} Завершить</button>` : ''}
+        <button class="icon-btn danger" data-gw-delete="${attr(g.id)}" title="Удалить">${icon('trash', 'sm')}</button>
+      </div>
+    </div>`).join('');
+}
+
+async function openGiveawayCreate() {
+  if (!state.chats.length) {
+    try { state.chats = await api('/api/admin/chats'); } catch (e) { /* ignore */ }
+  }
+  if (!state.gifts.length) {
+    try { state.gifts = await api('/api/admin/gifts'); } catch (e) { /* ignore */ }
+  }
+  const channels = state.chats.filter((c) => c.type === 'channel');
+  if (!channels.length) { toast('Сначала создайте канал', 'err'); return; }
+  const gifts = state.gifts.filter((g) => g.active);
+
+  openModal({
+    title: 'Новый розыгрыш',
+    sub: 'Участники нажимают «Участвовать» в баннере канала',
+    body: `<div class="form-grid">
+      <div class="field full"><label>Канал</label><select class="select" id="gw-chat">
+        ${channels.map((c) => `<option value="${attr(c.id)}">${esc(c.title)}</option>`).join('')}
+      </select></div>
+      <div class="field full"><label>Название</label><input class="input" id="gw-title" placeholder="Например, «Розыгрыш подарка»" maxlength="80"></div>
+      <div class="field"><label>Тип приза</label><select class="select" id="gw-type">
+        <option value="rubies">Рубины</option><option value="gift">Подарок</option><option value="custom">Свой приз</option>
+      </select></div>
+      <div class="field" id="gw-rubies-wrap"><label>Сумма, ₽</label><input class="input" id="gw-rubies" type="number" min="1" step="1" value="1000"></div>
+      <div class="field full" id="gw-gift-wrap" hidden><label>Подарок</label><select class="select" id="gw-gift">
+        ${gifts.length ? gifts.map((g) => `<option value="${attr(g.id)}">${esc(g.title)} — ${fmtNum(g.price)} ₽</option>`).join('') : '<option value="">В маркете нет подарков</option>'}
+      </select></div>
+      <div class="field full" id="gw-custom-wrap" hidden><label>Описание приза</label><input class="input" id="gw-custom" placeholder="Например, Premium на месяц" maxlength="120"></div>
+      <div class="field"><label>Победителей</label><input class="input" id="gw-winners" type="number" min="1" max="100" value="1"></div>
+      <div class="field"><label>Длительность</label><select class="select" id="gw-duration">
+        <option value="60">1 час</option><option value="360">6 часов</option>
+        <option value="1440" selected>1 день</option><option value="4320">3 дня</option><option value="10080">7 дней</option>
+      </select></div>
+    </div>
+    <p class="hint">${icon('sparkles', 'sm')} Розыгрыш завершится автоматически, победители получат приз, а в канал придёт сообщение с результатами.</p>`,
+    foot: `<button class="btn btn-ghost" data-modal-cancel>Отмена</button>
+           <button class="btn btn-primary" id="gw-save">${icon('party', 'sm')} Запустить</button>`,
+    onMount() {
+      const type = $('gw-type');
+      const sync = () => {
+        const v = type.value;
+        $('gw-rubies-wrap').hidden = v !== 'rubies';
+        $('gw-gift-wrap').hidden = v !== 'gift';
+        $('gw-custom-wrap').hidden = v !== 'custom';
+      };
+      type.addEventListener('change', sync);
+      $('gw-save').addEventListener('click', async () => {
+        const v = type.value;
+        const prizeValue = v === 'rubies' ? $('gw-rubies').value : v === 'gift' ? $('gw-gift').value : $('gw-custom').value.trim();
+        if (!prizeValue) { toast('Заполните приз', 'err'); return; }
+        try {
+          await api('/api/admin/giveaways', {
+            method: 'POST',
+            body: {
+              chatId: $('gw-chat').value,
+              title: $('gw-title').value.trim(),
+              prizeType: v,
+              prizeValue,
+              winnersCount: Number($('gw-winners').value) || 1,
+              durationMinutes: Number($('gw-duration').value) || 1440
+            }
+          });
+          toast('Розыгрыш запущен');
+          closeModal();
+          await loadGiveaways();
+        } catch (e) { toast(e.message, 'err'); }
+      });
+    }
+  });
+}
+
+async function drawGiveaway(id) {
+  if (!confirm('Завершить розыгрыш сейчас и выбрать победителей?')) return;
+  try {
+    const res = await api(`/api/admin/giveaways/${encodeURIComponent(id)}/draw`, { method: 'POST' });
+    const winners = (res.giveaway && res.giveaway.winners) || [];
+    toast(winners.length ? `Победители: ${winners.map((w) => '@' + w.username).join(', ')}` : 'Розыгрыш завершён');
+    await loadGiveaways();
+  } catch (e) { toast(e.message, 'err'); }
+}
+
+async function deleteGiveaway(id) {
+  if (!confirm('Удалить розыгрыш вместе с участниками?')) return;
+  try {
+    await api(`/api/admin/giveaways/${encodeURIComponent(id)}`, { method: 'DELETE' });
+    toast('Розыгрыш удалён');
+    await loadGiveaways();
+  } catch (e) { toast(e.message, 'err'); }
+}
+
+/* ---------------- STORIES ---------------- */
+async function loadStories() {
+  const grid = $('stories-grid');
+  if (grid) grid.innerHTML = `<div class="empty">${icon('refresh', 'lg')}<b>Загрузка…</b></div>`;
+  try {
+    state.stories = await api('/api/admin/stories');
+    renderStories();
+    setCount('nav-count-stories', state.stories.filter((s) => s.active).length);
+  } catch (e) {
+    toast(e.message, 'err');
+    if (grid) grid.innerHTML = emptyHtml('alert', 'Не удалось загрузить', e.message);
+  }
+}
+
+function renderStories() {
+  const grid = $('stories-grid');
+  if (!grid) return;
+  const q = state.storiesQuery.toLowerCase();
+  let items = state.stories.slice();
+  if (q) items = items.filter((s) => String(s.displayName || '').toLowerCase().includes(q) || String(s.username || '').toLowerCase().includes(q) || String(s.caption || '').toLowerCase().includes(q));
+  items.sort((a, b) => (b.active === a.active) ? 0 : (b.active ? 1 : -1));
+  if (!items.length) {
+    grid.innerHTML = emptyHtml('play', 'Историй нет', 'Когда пользователи опубликуют истории, они появятся здесь.');
+    return;
+  }
+  grid.innerHTML = items.map((s) => `
+    <article class="story-card" data-sid="${attr(s.id)}" style="${s.active ? '' : 'opacity:.6'}">
+      ${s.mediaType === 'video'
+        ? `<video src="${attr(s.mediaUrl)}" muted playsinline preload="metadata"></video>`
+        : `<img src="${attr(s.mediaUrl)}" alt="" loading="lazy">`}
+      <button class="del" data-story-delete="${attr(s.id)}" title="Удалить">${icon('trash', 'sm')}</button>
+      <div class="ov">
+        <div class="top">${avatarHtml({ avatar: s.avatar, displayName: s.displayName }, 'av')}<b>${esc(s.displayName || s.username || '—')}</b></div>
+        ${s.caption ? `<div class="cap">${esc(s.caption)}</div>` : ''}
+        <div class="bot">
+          <span>${icon('eye', 'sm')} ${fmtNum(s.views)}</span>
+          <span class="chip ${s.active ? 'ok' : 'mute'}">${s.active ? 'активна' : 'истекла'}</span>
+        </div>
+      </div>
+    </article>`).join('');
+}
+
+async function deleteStory(id) {
+  if (!confirm('Удалить историю?')) return;
+  try {
+    await api(`/api/admin/stories/${encodeURIComponent(id)}`, { method: 'DELETE' });
+    toast('История удалена');
+    await loadStories();
+  } catch (e) { toast(e.message, 'err'); }
+}
+
+/* ---------------- BROADCAST ---------------- */
+function loadBroadcast() {
+  const area = $('broadcast-text');
+  if (area) { area.value = ''; updateBroadcastPreview(); }
+}
+
+function updateBroadcastPreview() {
+  const area = $('broadcast-text');
+  if (!area) return;
+  const value = area.value;
+  const count = $('broadcast-count');
+  if (count) count.textContent = String(value.length);
+  const prev = $('broadcast-preview');
+  if (!prev) return;
+  prev.innerHTML = value.trim()
+    ? `<div style="display:flex;gap:10px;align-items:flex-start">
+        ${avatarHtml(me || { displayName: 'A' }, 'av')}
+        <div style="min-width:0"><b style="font-size:12.5px;display:block;margin-bottom:4px">${esc(me ? (me.displayName || me.username) : 'Администратор')}</b>
+        <div style="font-size:12.5px;line-height:1.55;white-space:pre-wrap;word-break:break-word">${esc(value)}</div></div>
+      </div>`
+    : '<p class="hint">Сообщение появится здесь по мере ввода.</p>';
+}
+
+async function sendBroadcast() {
+  const text = $('broadcast-text').value.trim();
+  if (!text) { toast('Введите текст', 'err'); return; }
+  if (!confirm('Отправить сообщение во все группы и каналы?')) return;
+  const btn = $('broadcast-send');
+  btn.disabled = true;
+  try {
+    const res = await api('/api/admin/broadcast', { method: 'POST', body: { text } });
+    toast(`Отправлено в ${res.sent} ${plural(res.sent, 'чат', 'чата', 'чатов')}`);
+    $('broadcast-text').value = '';
+    updateBroadcastPreview();
+  } catch (e) {
+    toast(e.message, 'err');
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+/* ---------------- CLANS ---------------- */
+async function loadClans() {
+  const body = $('clans-body');
+  if (body) body.innerHTML = `<tr><td colspan="6"><div class="empty"><b>Загрузка…</b></div></td></tr>`;
+  try {
+    state.clans = await api('/api/admin/clans');
+    renderClans();
+  } catch (e) {
+    toast(e.message, 'err');
+    if (body) body.innerHTML = `<tr><td colspan="6">${emptyHtml('alert', 'Не удалось загрузить', e.message)}</td></tr>`;
+  }
+}
+
+function renderClans() {
+  const body = $('clans-body');
+  if (!body) return;
+  if (!state.clans.length) {
+    body.innerHTML = `<tr><td colspan="6">${emptyHtml('shield', 'Кланов нет', 'Пользователи ещё не создавали кланы.')}</td></tr>`;
+    return;
+  }
+  body.innerHTML = state.clans.map((c) => `
+    <tr>
+      <td><b>${esc(c.name || '—')}</b></td>
+      <td><span class="chip violet">[${esc(c.tag || '—')}]</span></td>
+      <td>${esc(c.leader_name || '—')}</td>
+      <td>${fmtNum(c.members || 0)}</td>
+      <td><span class="dim" style="font-size:11px">${esc(fmtDay(c.created_at))}</span></td>
+      <td><div class="row-actions"><button class="icon-btn danger" data-clan-delete="${attr(c.id)}" title="Удалить">${icon('trash', 'sm')}</button></div></td>
+    </tr>`).join('');
+}
+
+async function deleteClan(id) {
+  if (!confirm('Удалить клан?')) return;
+  try {
+    await api(`/api/admin/clans/${encodeURIComponent(id)}`, { method: 'DELETE' });
+    toast('Клан удалён');
+    await loadClans();
+  } catch (e) { toast(e.message, 'err'); }
+}
+
+/* ---------------- LOGIN / SESSION ---------------- */
+function showLogin() {
+  $('login-screen').style.display = 'flex';
+  $('app-shell').hidden = true;
+  setTimeout(() => { const u = $('login-user'); if (u) u.focus(); }, 80);
+}
+
+function logout(silent) {
+  token = '';
+  me = null;
+  localStorage.removeItem(TOKEN_KEY);
+  if (!silent) toast('Вы вышли из панели', 'info');
+  showLogin();
+}
+
+async function doLogin(event) {
+  if (event) event.preventDefault();
+  const username = $('login-user').value.trim();
+  const password = $('login-pass').value;
+  const errEl = $('login-error');
+  const btn = $('login-submit');
+  errEl.style.display = 'none';
+  if (!username || !password) { errEl.textContent = 'Введите логин и пароль'; errEl.style.display = 'block'; return; }
+  btn.disabled = true;
+  btn.innerHTML = `${icon('refresh', 'sm')} Вход…`;
+  try {
+    const res = await api('/api/auth/login', { method: 'POST', body: { username, password } });
+    if (!res.user || !res.user.isAdmin) throw new Error('У этого аккаунта нет прав администратора');
+    token = res.token;
+    localStorage.setItem(TOKEN_KEY, token);
+    me = res.user;
+    boot();
+  } catch (e) {
+    errEl.textContent = e.message;
+    errEl.style.display = 'block';
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = `${icon('lock', 'sm')} Войти в панель`;
+  }
+}
+
+function paintMe() {
+  if (!me) return;
+  const name = me.displayName || me.username || 'Администратор';
+  $('side-name').textContent = name;
+  $('side-username').textContent = '@' + (me.username || 'admin');
+  const av = $('side-avatar');
+  if (me.avatar) av.innerHTML = `<img src="${attr(me.avatar)}" alt="">`;
+  else { av.textContent = initialOf(name); av.style.background = gradientFor(name); }
+}
+
+function boot() {
+  $('login-screen').style.display = 'none';
+  $('app-shell').hidden = false;
+  paintMe();
+  wireEvents();
+  setView('dashboard');
+}
+
+/* ---------------- EVENTS ---------------- */
+let eventsWired = false;
+let usersTimer = null;
+let messagesTimer = null;
+
+function debounce(fn, delay) {
+  let t = null;
+  return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), delay); };
+}
+
+function wireEvents() {
+  if (eventsWired) return;
+  eventsWired = true;
+
+  document.querySelectorAll('.nav-item[data-view]').forEach((btn) => {
+    btn.addEventListener('click', () => setView(btn.dataset.view));
+  });
+
+  $('mobile-menu-btn').addEventListener('click', () => document.body.classList.toggle('nav-open'));
+  $('refresh-btn').addEventListener('click', () => { loadView(state.view); toast('Данные обновлены', 'info'); });
+  $('logout-btn').addEventListener('click', () => logout(false));
+
+  $('login-form').addEventListener('submit', doLogin);
+  $('modal-close').addEventListener('click', closeModal);
+  $('modal').addEventListener('click', (e) => { if (e.target === $('modal')) closeModal(); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && $('modal').style.display === 'flex') closeModal(); });
+  document.addEventListener('click', (e) => {
+    if (e.target.closest('[data-modal-cancel]')) closeModal();
+  });
+
+  /* global search */
+  $('global-search').addEventListener('input', debounce((e) => {
+    const q = e.target.value.trim();
+    if (state.view === 'dashboard') { state.usersQuery = q; setView('users'); const us = $('users-search'); if (us) us.value = q; return; }
+    if (state.view === 'users') { state.usersQuery = q; const us = $('users-search'); if (us) us.value = q; loadUsers(); return; }
+    if (state.view === 'chats') { state.chatsQuery = q; const cs = $('chats-search'); if (cs) cs.value = q; renderChats(); return; }
+    if (state.view === 'messages') { state.messagesQuery = q; const ms = $('messages-search'); if (ms) ms.value = q; loadMessages(); return; }
+    if (state.view === 'gifts') { state.giftsQuery = q; renderGifts(); return; }
+    if (state.view === 'stories') { state.storiesQuery = q; renderStories(); return; }
+  }, 260));
+
+  /* dashboard quick actions */
+  document.querySelectorAll('[data-quick]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const a = btn.dataset.quick;
+      if (a === 'new-chat') openChatCreate();
+      if (a === 'new-gift') openGiftEditor(null);
+      if (a === 'new-giveaway') openGiveawayCreate();
+      if (a === 'broadcast') setView('broadcast');
+    });
+  });
+
+  /* users */
+  $('users-search').addEventListener('input', debounce((e) => { state.usersQuery = e.target.value.trim(); loadUsers(); }, 280));
+  $('users-refresh').addEventListener('click', () => loadUsers());
+  $('users-grid').addEventListener('click', (e) => {
+    const edit = e.target.closest('[data-user-edit]');
+    if (edit) return openUserEditor(edit.dataset.userEdit);
+    const cur = e.target.closest('[data-user-currency]');
+    if (cur) return openCurrencyModal(cur.dataset.userCurrency);
+    const badge = e.target.closest('[data-user-badge]');
+    if (badge) return openBadgeModal(badge.dataset.userBadge);
+    const ban = e.target.closest('[data-user-ban]');
+    if (ban) return banUser(ban.dataset.userBan, false);
+    const unban = e.target.closest('[data-user-unban]');
+    if (unban) return banUser(unban.dataset.userUnban, true);
+    const del = e.target.closest('[data-user-delete]');
+    if (del) return deleteUser(del.dataset.userDelete);
+  });
+
+  /* chats */
+  $('chats-search').addEventListener('input', debounce((e) => { state.chatsQuery = e.target.value.trim(); renderChats(); }, 200));
+  $('chat-create-btn').addEventListener('click', openChatCreate);
+  document.querySelectorAll('[data-chat-filter]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      state.chatFilter = btn.dataset.chatFilter;
+      document.querySelectorAll('[data-chat-filter]').forEach((b) => {
+        b.classList.toggle('ok', b === btn);
+        b.classList.toggle('mute', b !== btn);
+      });
+      renderChats();
+    });
+  });
+  $('chats-list').addEventListener('click', (e) => {
+    const edit = e.target.closest('[data-chat-edit]');
+    if (edit) return openChatEditor(edit.dataset.chatEdit);
+    const open = e.target.closest('[data-chat-open]');
+    if (open) { window.open('/', '_blank', 'noopener'); return; }
+    const del = e.target.closest('[data-chat-delete]');
+    if (del) return deleteChat(del.dataset.chatDelete);
+  });
+  $('chats-list').addEventListener('change', (e) => {
+    const sel = e.target.closest('[data-chat-badge]');
+    if (sel) setChatBadge(sel.dataset.chatBadge, sel.value);
+  });
+
+  /* messages */
+  $('messages-search').addEventListener('input', debounce((e) => { state.messagesQuery = e.target.value.trim(); loadMessages(); }, 320));
+  $('messages-chat-filter').addEventListener('change', (e) => { state.messagesChat = e.target.value; loadMessages(); });
+  $('messages-body').addEventListener('click', (e) => {
+    const del = e.target.closest('[data-msg-delete]');
+    if (del) deleteMessage(del.dataset.msgDelete);
+  });
+
+  /* gifts */
+  $('gift-create-btn').addEventListener('click', () => openGiftEditor(null));
+  $('gifts-grid').addEventListener('click', (e) => {
+    const edit = e.target.closest('[data-gift-edit]');
+    if (edit) return openGiftEditor(edit.dataset.giftEdit);
+    const del = e.target.closest('[data-gift-delete]');
+    if (del) return deleteGift(del.dataset.giftDelete);
+  });
+
+  /* badges */
+  $('badges-body').addEventListener('click', (e) => {
+    const del = e.target.closest('[data-badge-delete]');
+    if (del) deleteBadge(del.dataset.badgeDelete);
+  });
+
+  /* giveaways */
+  $('giveaway-create-btn').addEventListener('click', openGiveawayCreate);
+  $('giveaways-list').addEventListener('click', (e) => {
+    const draw = e.target.closest('[data-gw-draw]');
+    if (draw) return drawGiveaway(draw.dataset.gwDraw);
+    const del = e.target.closest('[data-gw-delete]');
+    if (del) return deleteGiveaway(del.dataset.gwDelete);
+  });
+
+  /* stories */
+  $('stories-refresh').addEventListener('click', () => loadStories());
+  $('stories-grid').addEventListener('click', (e) => {
+    const del = e.target.closest('[data-story-delete]');
+    if (del) deleteStory(del.dataset.storyDelete);
+  });
+
+  /* broadcast */
+  $('broadcast-text').addEventListener('input', updateBroadcastPreview);
+  $('broadcast-send').addEventListener('click', sendBroadcast);
+
+  /* clans */
+  $('clans-body').addEventListener('click', (e) => {
+    const del = e.target.closest('[data-clan-delete]');
+    if (del) deleteClan(del.dataset.clanDelete);
+  });
+
+  /* live countdown refresh */
+  setInterval(() => {
+    if (state.view === 'giveaways') {
+      document.querySelectorAll('.gw-row').forEach((row) => {
+        const g = state.giveaways.find((x) => x.id === row.dataset.gwid);
+        if (!g || g.status !== 'active') return;
+        const t = row.querySelector('.timer');
+        if (t) t.innerHTML = `${icon('timer')} до ${esc(fmtDate(g.endsAt))} · ${esc(countdown(g.endsAt))}`;
+      });
+    }
+  }, 30000);
+}
+
+/* ---------------- INIT ---------------- */
+(async function init() {
+  wireEvents();
+  if (!token) { showLogin(); return; }
+  try {
+    const user = await api('/api/auth/me');
+    if (!user.isAdmin) throw new Error('Нет прав администратора');
+    me = user;
+    boot();
+  } catch (e) {
+    token = '';
+    localStorage.removeItem(TOKEN_KEY);
+    showLogin();
+  }
+})();
+</script>
+</body>
+</html>
