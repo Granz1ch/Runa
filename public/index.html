@@ -481,6 +481,15 @@
             <input type="text" id="edit-city-val" placeholder="Город или страна">
           </div>
           <div class="form-row">
+  <label>Музыка в профиле</label>
+  <div class="track-edit-row">
+    <span id="edit-track-name" style="opacity:.7;font-size:13px;">Не выбрано</span>
+    <button class="mac-btn secondary" id="btn-upload-profile-track"><i data-lucide="upload"></i> Загрузить</button>
+    <button class="mac-btn secondary" id="btn-clear-profile-track"><i data-lucide="trash-2"></i></button>
+  </div>
+          </div>
+          <input type="file" id="profile-track-input" accept="audio/*" style="display: none;">
+          <div class="form-row">
             <label>NFT юзернеймы</label>
             <div class="edit-nfts-list" id="edit-nfts-list"></div>
           </div>
