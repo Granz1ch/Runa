@@ -161,6 +161,7 @@ const ensureColumn = (table, column, definition) => {
 };
 
 ensureColumn('users', 'rubies', 'INTEGER DEFAULT 0');
+ensureColumn('users', 'profile_track', "TEXT DEFAULT ''");
 ensureColumn('users', 'mops_balance', 'REAL DEFAULT 0.0');
 ensureColumn('users', 'show_balance_in_profile', 'INTEGER DEFAULT 1');
 ensureColumn('users', 'is_premium', 'INTEGER DEFAULT 0');
@@ -728,6 +729,15 @@ app.get('/api/auth/me', requireAuth, (req, res) => {
 /* ------------------------------------------------------------------ */
 /*  USERS                                                              */
 /* ------------------------------------------------------------------ */
+app.post('/api/user/profile-track', requireAuth, (req, res) => {
+  const url = String(req.body.url || '').trim();
+  if (url && !/^\/uploads\/[a-zA-Z0-9._-]+$/.test(url)) {
+    return res.status(400).json({ error: 'Некорректная ссылка' });
+  }
+  db.prepare('UPDATE users SET profile_track = ? WHERE id = ?').run(url, req.user.id);
+  emitUserUpdated(req.user.id);
+  res.json({ ok: true, profileTrack: url });
+});
 app.get('/api/username/check', requireAuth, (req, res) => {
   const username = cleanUsername(req.query.username);
   if (!validUsername(username)) {
@@ -1190,10 +1200,15 @@ app.post('/api/chats/:id/read', requireAuth, (req, res) => {
 /* ------------------------------------------------------------------ */
 app.post('/api/upload', requireAuth, upload.single('file'), (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'Файл не загружен' });
+  const m = req.file.mimetype || '';
+  const type = m.startsWith('image/') ? 'image'
+             : m.startsWith('audio/') ? 'audio'
+             : m.startsWith('video/') ? 'video'
+             : 'file';
   res.json({
     url: `/uploads/${req.file.filename}`,
     name: req.file.originalname,
-    type: req.file.mimetype.startsWith('image/') ? 'image' : 'file'
+    type
   });
 });
 
