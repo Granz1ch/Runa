@@ -161,6 +161,7 @@ const ensureColumn = (table, column, definition) => {
 };
 
 ensureColumn('users', 'rubies', 'INTEGER DEFAULT 0');
+ensureColumn('users', 'profile_track', "TEXT DEFAULT ''");
 ensureColumn('users', 'mops_balance', 'REAL DEFAULT 0.0');
 ensureColumn('users', 'show_balance_in_profile', 'INTEGER DEFAULT 1');
 ensureColumn('users', 'is_premium', 'INTEGER DEFAULT 0');
