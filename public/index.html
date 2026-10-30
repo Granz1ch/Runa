@@ -209,7 +209,9 @@
           </div>
           <div class="chat-input-bar">
             <input type="file" id="media-file-input" style="display: none;">
+            <input type="file" id="audio-file-input" accept="audio/*" style="display: none;">
             <button class="input-action-btn" id="btn-attach"><i data-lucide="paperclip"></i></button>
+            <button class="input-action-btn" id="btn-audio" title="Музыка"><i data-lucide="music"></i></button>
             <button class="input-action-btn" id="btn-stickers" title="Стикеры"><i data-lucide="sticker"></i></button>
             <textarea id="composer-textarea" rows="1" placeholder="Написать сообщение..."></textarea>
             <button class="send-message-btn" id="btn-send"><i data-lucide="arrow-up"></i></button>
@@ -342,6 +344,13 @@
         <div class="profile-avatar-giant" id="card-avatar">T</div>
         <h2 class="profile-card-name" id="card-name">test</h2>
         <p class="profile-bio-line" id="card-bio"></p>
+        <div class="profile-track" id="card-track" style="display: none;">
+        <button class="pt-btn" id="card-track-toggle">▶</button>
+        <div class="pt-info">
+        <div class="pt-title" id="card-track-title">Трек</div>
+  </div>
+  <button class="pt-clear" id="card-track-clear" title="Снять трек">✕</button>
+    </div>
         
         <div class="profile-status-badges">
           <span class="level-badge" id="card-level">1</span>
@@ -477,6 +486,15 @@
             <label>Место</label>
             <input type="text" id="edit-city-val" placeholder="Город или страна">
           </div>
+          <div class="form-row">
+  <label>Музыка в профиле</label>
+  <div class="track-edit-row">
+    <span id="edit-track-name" style="opacity:.7;font-size:13px;">Не выбрано</span>
+    <button class="mac-btn secondary" id="btn-upload-profile-track"><i data-lucide="upload"></i> Загрузить</button>
+    <button class="mac-btn secondary" id="btn-clear-profile-track"><i data-lucide="trash-2"></i></button>
+  </div>
+          </div>
+          <input type="file" id="profile-track-input" accept="audio/*" style="display: none;">
           <div class="form-row">
             <label>NFT юзернеймы</label>
             <div class="edit-nfts-list" id="edit-nfts-list"></div>

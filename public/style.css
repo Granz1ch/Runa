@@ -6543,3 +6543,45 @@ body.story-viewer-open { overflow: hidden; }
   .profile-bottom-tab em { min-width: 15px; height: 15px; padding: 0 3px; font-size: 9px; }
 }
 @media (max-width: 340px) { .profile-phrase-grid { grid-template-columns: 1fr; } }
+/* ===== Аудио в чате ===== */
+.audio-msg {
+  display: flex; align-items: center; gap: 10px;
+  background: rgba(255,255,255,.06);
+  border-radius: 14px; padding: 8px 10px;
+  max-width: 340px;
+  margin-top: 4px;
+}
+.audio-msg audio { flex: 1; min-width: 200px; height: 36px; }
+.audio-msg .to-profile-btn {
+  background: transparent; border: 0; color: #2AABEE; cursor: pointer;
+  font-size: 12px; padding: 4px 6px;
+}
+
+/* ===== Плеер в профиле ===== */
+.profile-track {
+  display: flex; align-items: center; gap: 10px;
+  background: rgba(255,255,255,.06);
+  border-radius: 14px; padding: 8px 12px;
+  margin: 10px auto; max-width: 340px;
+}
+.profile-track.hidden { display: none; }
+.pt-btn {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: #2AABEE; border: 0; color: #fff;
+  cursor: pointer; font-size: 14px;
+}
+.pt-info { flex: 1; min-width: 0; }
+.pt-title {
+  font-size: 13px; overflow: hidden;
+  text-overflow: ellipsis; white-space: nowrap;
+}
+.pt-clear {
+  background: transparent; border: 0; color: #fff;
+  opacity: .4; cursor: pointer; font-size: 14px;
+  display: none;
+}
+.profile-track.own .pt-clear { display: block; }
+
+.track-edit-row {
+  display: flex; align-items: center; gap: 8px;
+  flex-wrap: wrap;
